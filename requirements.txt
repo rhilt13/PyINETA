@@ -1,0 +1,12 @@
+numpy
+configparser
+nmrglue
+spatial
+collections-defaultdict
+networkx
+shutil.copyfile
+json
+itertools
+os
+sys
+string
