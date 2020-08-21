@@ -5,7 +5,7 @@ from collections import defaultdict
 import itertools
 import networkx as nx
 
-def FindClosestPoints (Pts,Qry):
+def findClosestPoints (Pts,Qry):
 	PtsList = spatial.KDTree(Pts)
 	QryRes=PtsList.query(Qry)
 	return(QryRes)
@@ -15,7 +15,7 @@ def mergeLevels (Clist,levdist):
 	mergedClist=Clist[0]
 	for k, C in list(Clist.items()):
 		for P in C:
-			res=FindClosestPoints(mergedClist,P)
+			res=findClosestPoints(mergedClist,P)
 			# print(res,P,mergedClist[res[1]])
 			if (res[0]>float(levdist)):
 				mergedClist=np.vstack([mergedClist, P])
@@ -28,7 +28,7 @@ def mergeLevels (Clist,levdist):
 				mergedClist = np.delete(mergedClist, (res[1]), axis=0)
 				mergedClist=np.vstack([mergedClist, avgP])	
 	mergedClist.view('i8,i8').sort(order=['f0'], axis=0) # Sort numerically based on 1st column
-	print(mergedClistAll.shape[0]," Points merged to ",mergedClist.shape[0])
+	print("Step3.1==> Merging levels: ",mergedClistAll.shape[0]," Points merged to ",mergedClist.shape[0])
 	return(mergedClist)
 
 
@@ -36,7 +36,7 @@ def horzAlign (P,threshold1,threshold2,threshold3):
 	ct=0
 	Pd=dict()
 	Pd[0]=P
-	AlnY=filtering.YSort(Pd,threshold1,1)
+	AlnY=filtering.sortY(Pd,threshold1,1)
 	# AlnY=Sort(P,threshold1,1)
 	filtI=defaultdict(list)
 	# print "AlnY==> ",AlnY
@@ -69,7 +69,7 @@ def getPairs(lst):
 		first = curr
 	yield curr, second
 
-def BuildNetwork (HorzPts,VertPts):	# Make network from selected peaks
+def buildNetwork (HorzPts,VertPts):	# Make network from selected peaks
 	# Input filtered set of Xpeak points from above function
 	# print HorzPts
 	# print VertPts
@@ -99,7 +99,7 @@ def BuildNetwork (HorzPts,VertPts):	# Make network from selected peaks
 			# if k in VertPts:
 		j+=1
 	# print "NetAfter=",Net
-	return (Net,Netf,j)
+	return (Net)
 
 def listPairs (horzPts,vertPts):
 	allPairs=[]

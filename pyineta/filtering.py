@@ -1,7 +1,7 @@
 from collections import defaultdict
 import numpy as np
 
-def Sort (Points, thres, ax):
+def sortX (Points, thres, ax):
 	sets = defaultdict(list)
 	sPts = sorted(Points, key=lambda tup: tup[ax]) # ax=0 for X, 1 for Y
 	# print sPts
@@ -21,7 +21,7 @@ def Sort (Points, thres, ax):
 	# print sets
 	return(sets)
 
-def YSort (Points, thres, ax):
+def sortY (Points, thres, ax):
 	sets = defaultdict(list)
 	i=0
 	for k, Group in list(Points.items()):
@@ -36,7 +36,7 @@ def YSort (Points, thres, ax):
 		i=i+1
 	return(sets)
 
-def CenterMass (Clusters,metric):
+def centerMass (Clusters,metric):
 	Center = []
 	C=[]
 	for k, clust in list(Clusters.items()):

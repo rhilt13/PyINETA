@@ -1,7 +1,7 @@
-
-import matplotlib.pyplot as plt
+import os
 import numpy as np
-import itertools
+import matplotlib.pyplot as plt
+from itertools import combinations
 from shutil import copyfile
 
 from matplotlib.axes._axes import _log as matplotlib_axes_logger
@@ -81,8 +81,8 @@ def plotFilteredPoints (figSep,axsSep,figCom,axsCom,pyinetaObj,PPcs,PPdq,out_sep
 		else:
 			c=1
 		for i in C:
-			circ=plt.Circle(i,radius=max(PPcs,PPdq),color='b',fill=False,linestyle='dotted',linewidth=0.8)
-			circ2=plt.Circle(i,radius=max(PPcs,PPdq),color='b',fill=False,linestyle='dotted',linewidth=0.8)
+			circ=plt.Circle(i,radius=min(PPcs,PPdq),color='b',fill=False,linestyle='dotted',linewidth=0.8)
+			circ2=plt.Circle(i,radius=min(PPcs,PPdq),color='b',fill=False,linestyle='dotted',linewidth=0.8)
 			if (panels>1):
 				axsSep[r,c].add_patch(circ)
 			axsCom.add_patch(circ2)
@@ -98,7 +98,7 @@ def plotAllNet (horzPts,vertPts,ax,rad):
 			ax.add_patch(circ)
 		ax.plot([v[0][0], v[1][0]], [v[0][1], v[1][1]], color='#f72d1c', linestyle='--', linewidth=2)
 	for i,v in list(vertPts.items()):
-		for a, b in itertools.combinations(enumerate(v),2):
+		for a, b in combinations(enumerate(v),2):
 			ax.plot([a[1][0], b[1][0]], [a[1][1], b[1][1]], color='#f72d1c', linestyle='--', linewidth=2)
 	return (ax)
 
@@ -129,8 +129,11 @@ def plotNetwork (pyinetaObj,Xrng,Yrng,PPcs,PPdq,out_nets=None):
 	if out_nets is not None:
 		figFin.savefig(out_nets,format='eps',dpi=300)
 
-def get_cmap(n, name='Set1'):
-	return plt.get_cmap(name, n)
+def colors(n):
+	# Custom colormap for visually distinct colors:
+	# Colors are: orangered, darkblue,forestgreen,maroon3,fuchsia,cornflower,lime,aqua,moccasin,yellow
+	col_list=['#ff4500','#00008b','#228b22','#b03060','#ff00ff','#6495ed','#00ff00','#00ffff','#ffe4b5','#ffff00']
+	return col_list[n]
 
 def plotDb (dbNet,ax,col,pos,name):
 	X=[]
@@ -169,7 +172,6 @@ def plotDb (dbNet,ax,col,pos,name):
 	return(ax)
 
 def plotMatches (pyinetaObj,outFolder,db_file,Xrng,Yrng):
-	import os
 	
 	# Initialize folders and output files:
 	outNetFigs=outFolder+"/Network_figs/"
@@ -181,8 +183,6 @@ def plotMatches (pyinetaObj,outFolder,db_file,Xrng,Yrng):
 	li = db_file.rsplit('/')
 	li.pop()
 	src="/".join(li)
-	# Initialize colors:
-	color = get_cmap(20)
 	# Plotting individual network and matches
 	for i in pyinetaObj.NetMatch:
 		col=0
@@ -199,7 +199,7 @@ def plotMatches (pyinetaObj,outFolder,db_file,Xrng,Yrng):
 			axsCom.plot([j[0][0], j[1][0]], [j[0][1], j[1][1]], color='0.45', linestyle='--', linewidth=4)
 		if len(i)>5:
 			for j in range(5,len(i)):
-				axsCom=plotDb(i[j][1][0],axsCom,color(col),pos,i[j][0])
+				axsCom=plotDb(i[j][1][0],axsCom,colors(col),pos,i[j][0])
 				for label, x, y in zip(i[3],i[1],i[2]):
 					axsCom.annotate(label, xy=(x, y), xytext=(-20, 20),fontsize='25',textcoords='offset points', ha='right', va='bottom')
 				name=i[j][0]
@@ -209,8 +209,8 @@ def plotMatches (pyinetaObj,outFolder,db_file,Xrng,Yrng):
 				srcfile=src+"/db_images_constXYlim/"+name
 				destfile=outMatchFigs+name
 				copyfile(srcfile,destfile)
-				pos=pos+1
-				col=col+1
-				if col==50:
+				pos+=1
+				col+=1
+				if col==10:
 					col=0
 		figCom.savefig(netfig, dpi=300)

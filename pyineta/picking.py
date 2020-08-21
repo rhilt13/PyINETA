@@ -12,29 +12,16 @@ def readFt (FtFile):
     Xs=CS.ppm_scale()
     return(In,Xs,Ys)
 
-def readMat (Intsy,ppm1,ppm2):
-    DataIn = scipy.io.loadmat(Intsy)
-    In=DataIn['outreal']
-    In=In.transpose()
-    DataXs = scipy.io.loadmat(ppm1)
-    Xs=DataXs['outppm1']
-    Xs=Xs.flatten()
-    DataYs = scipy.io.loadmat(ppm2)
-    Ys=DataYs['outppm2']
-    Ys=Ys.flatten()
-    return(In,Xs,Ys)
-
 def shifting (In,pX,fullX,fullY,direction):
     pY=pX*2
-    print(pX,fullX,fullY,direction)
-    if direction == "pos":      # For increasing ppm axes (eg: peak at 35 ppm is now at 40 ppm)
+    if direction.lower() == "pos":      # For increasing ppm axes (eg: peak at 35 ppm is now at 40 ppm)
         padX=np.zeros((pX,fullY))   # fullY= 8192 for INADEQUATE
         padY=np.zeros((fullX,pY))   # fullX=4096 for INADEQUATE
         In=np.hstack((In,padY))
         In=In[:,pY:]
         In=np.concatenate((In,padX))
         In=In[pX:,:]
-    elif direction == "neg":        # For decreasing ppm axes (eg: peak at 40 ppm is now at 35 ppm)
+    elif direction.lower() == "neg":        # For decreasing ppm axes (eg: peak at 40 ppm is now at 35 ppm)
         padX=np.zeros((pX,fullY))   # fullY= 8192 for INADEQUATE
         padY=np.zeros((fullX,pY))   # fullX=4096 for INADEQUATE
         In=np.hstack((padY,In)) 
@@ -48,7 +35,8 @@ def frange(start,end,parts):
     part_duration = duration / (parts-1)
     return [start+(i * part_duration) for i in range(parts-1,-1,-1)]
 
-def pick (points,xppm,yppm,PPmin,PPmax,steps):
+def pick (In,xppm,yppm,PPmin,PPmax,steps):
+    points=np.copy(In)
     j=0
     X={}
     Y={}

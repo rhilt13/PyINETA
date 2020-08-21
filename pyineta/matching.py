@@ -22,7 +22,7 @@ def prepUnknowns (Pvals,Pairs):
 	unknownConn= [[TagDict[j] for j in x] for x in FinalPairs]
 	return(Ptags,unknownConn,FinalPairs)
 
-def MatchTag (match_peaks,candidate_peaks,unknown_conn):
+def matchTag (match_peaks,candidate_peaks,unknown_conn):
 	final_match={}
 	no_match={}
 	hits=0
@@ -43,7 +43,7 @@ def MatchTag (match_peaks,candidate_peaks,unknown_conn):
 			hits=hits+1
 	return (final_match,no_match,hits)
 	
-def MatchDatabase (json_db,Pval,tag,unknown_conn,amb_tol,near_tol,match_tol,top_tol,hit_tol,cov_tol,NetNum,Pts):
+def matchDatabase (json_db,Pval,tag,unknown_conn,amb_tol,near_tol,match_tol,top_tol,hit_tol,cov_tol,NetNum,Pts):
 #MatchTag
 	X = [float(i[0]) for i in Pval]
 	Y = [float(i[1]) for i in Pval]
@@ -103,7 +103,7 @@ def MatchDatabase (json_db,Pval,tag,unknown_conn,amb_tol,near_tol,match_tol,top_
 					# print("matchPeaks==>",matchPeaks)
 					# print("candPeaks==>",candPeaks)
 					# print("unknown_conn==>",unknown_conn)
-					(fin_match,no_match,hitCount)=MatchTag(matchPeaks,candPeaks,unknown_conn)
+					(fin_match,no_match,hitCount)=matchTag(matchPeaks,candPeaks,unknown_conn)
 					hitScore=float("{0:.3f}".format(float(hitCount)/float(len(json_db[i]['Networks']))))
 					CovScore=float("{0:.3f}".format(float(len(found))/float(len(tag))))
 					# print len(found),found,len(tag),tag 
