@@ -63,7 +63,7 @@ def matchDatabase (json_db,Pval,tag,unknown_conn,amb_tol,near_tol,match_tol,top_
 		if (len(json_db[i]['Networks'] ) >=1):
 			# print json_db[i]['Networks'], len(json_db[i]['Networks'] )
 			if (json_db[i]['Ambiguity'] <= float(amb_tol)):
-				# print json_db[i]['Ambiguity'],"===", amb_tol
+				ambScore=json_db[i]['Ambiguity']
 				for xval in X:
 					for CS in json_db[i]['ChemicalShifts']:
 						if CS not in matchCS:
@@ -119,6 +119,7 @@ def matchDatabase (json_db,Pval,tag,unknown_conn,amb_tol,near_tol,match_tol,top_
 						# hitOut.append(IndDict)
 						hitOut.append(fin_match)
 						hitOut.append(no_match)
+						hitOut.append(ambScore)
 						hitOut.append(hitScore)
 						hitOut.append(CovScore)
 						hitList.append(hitOut)

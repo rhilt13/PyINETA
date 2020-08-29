@@ -50,13 +50,13 @@ def main(args):
 				print("\tPlease check the [Ft_File] or the [Data_Matrix_File, 13C_Ppm_File and Double_Quantum_File] options in the config file.")
 				exit(0)
 		else:
-			pickle.dump(spec, open('ptf_pyINETAObj.tmp', 'wb'))
+			pickle.dump(spec, open('ptf_pyINETAObj.pickle', 'wb'))
 			print("..Done.")
 
 	## Check for the presence of the pyineta object pickle file to load data from for subsequent steps.
 	
 	if args.steps.lower() not in {'all','load','load+'}:
-		if not os.path.isfile("ptf_pyINETAObj.tmp"):
+		if not os.path.isfile("ptf_pyINETAObj.pickle"):
 			print("ERROR: PyINETA object file not found. Please run the load module with -s load option first.")
 			exit(0)
 	
@@ -69,7 +69,7 @@ def main(args):
 	if args.steps.lower() in {'all','pick','load+','pick+'}:
 
 		if args.steps.lower() in {'pick','pick+'}:
-			with open('ptf_pyINETAObj.tmp', 'rb') as handle:
+			with open('ptf_pyINETAObj.pickle', 'rb') as handle:
 				spec = pickle.loads(handle.read())
 
 		if param["Shift"].lower() == "yes":
@@ -79,10 +79,10 @@ def main(args):
 		print("Step1==> Peak picking with cutoffs min =","{:.2e}".format(PPmin),"and max =","{:.2e}".format(PPmax), "with ",steps," steps...", end=' ')
 		try:
 			spec.pickPeak(PPmin,PPmax,steps,padUnits)
-		except AttributeError:
-			pyineta.stepError()
+		except AttributeError as atte:
+			pyineta.stepError(atte)
 		# print(spec.Pts)
-		pickle.dump(spec, open('ptf_pyINETAObj.tmp', 'wb'))
+		pickle.dump(spec, open('ptf_pyINETAObj.pickle', 'wb'))
 		print("..Done.")
 
 	## Step 2: Filter points
@@ -93,16 +93,16 @@ def main(args):
 	if args.steps.lower() in {'all','filter','load+','pick+','filter+'}:
 
 		if args.steps.lower() in {'filter','filter+'}:
-			with open('ptf_pyINETAObj.tmp', 'rb') as handle:
+			with open('ptf_pyINETAObj.pickle', 'rb') as handle:
 				spec = pickle.loads(handle.read())
 
 		
 		print("Step2==> Filtering points using PPCS=",PPcs,"and PPDQ=",PPdq,"and finding center of mass for clustered points...", end=' ')
 		try:
 			spec.filterPoints(PPcs,PPdq)
-		except AttributeError:
-			pyineta.stepError()
-		pickle.dump(spec, open('ptf_pyINETAObj.tmp', 'wb'))
+		except AttributeError as atte:
+			pyineta.stepError(atte)
+		pickle.dump(spec, open('ptf_pyINETAObj.pickle', 'wb'))
 		print("..Done.")
 
 	## Step 3: Find Networks
@@ -110,7 +110,7 @@ def main(args):
 	if args.steps.lower() in {'all','find','load+','pick+','filter+','find+'}:
 
 		if args.steps.lower() in {'find','find+'}:
-			with open('ptf_pyINETAObj.tmp', 'rb') as handle:
+			with open('ptf_pyINETAObj.pickle', 'rb') as handle:
 				spec = pickle.loads(handle.read())
 
 		levdist=param['LevelPointsDistance']
@@ -121,12 +121,12 @@ def main(args):
 		print("Step3==> Finding networks...")
 		try:
 			spec.findNetwork(levdist,dqt,sumXY,sdt,cst)
-		except AttributeError:
-			pyineta.stepError()
+		except AttributeError as atte:
+			pyineta.stepError(atte)
 		#
 		net_file=param['Network_output_file']
 		spec.writeNetwork(net_file)
-		pickle.dump(spec, open('ptf_pyINETAObj.tmp', 'wb'))
+		pickle.dump(spec, open('ptf_pyINETAObj.pickle', 'wb'))
 		print("...Done.")
 
 	## Step 4: Match Database
@@ -136,7 +136,7 @@ def main(args):
 	if args.steps.lower() in {'all','match','load+','pick+','filter+','find+','match+'}:
 
 		if args.steps.lower() in {'match','match+'}:
-			with open('ptf_pyINETAObj.tmp', 'rb') as handle:
+			with open('ptf_pyINETAObj.pickle', 'rb') as handle:
 				spec = pickle.loads(handle.read())
 
 		ambig=param['Ambiguity']
@@ -148,23 +148,26 @@ def main(args):
 		print("Step4==> Searching database",inetaDb,"for matches...")
 		try:
 			spec.matchDb(inetaDb,ambig,near,match,topo,hitSc,covSc)
-		except AttributeError:
-			pyineta.stepError()
+		except AttributeError as atte:
+			pyineta.stepError(atte)
 		#
 		match_file= param['Matches_list_output_file']
 		spec.writeMatches(args.output,match_file)
-		pickle.dump(spec, open('ptf_pyINETAObj.tmp', 'wb'))
+		pickle.dump(spec, open('ptf_pyINETAObj.pickle', 'wb'))
 		print("...Done.")
 
 	if args.steps.lower() in {'all','summary','load+','pick+','filter+','find+','match+'}:
 		
 		if args.steps.lower() in {'summary'}:
-			with open('ptf_pyINETAObj.tmp', 'rb') as handle:
+			with open('ptf_pyINETAObj.pickle', 'rb') as handle:
 				spec = pickle.loads(handle.read())
 
 		summary_file=param['Summary_file']
 		spec.summarize(args.output,summary_file)
 	#plotting for all
+	if args.steps.lower() in {'plot'}:
+		with open('ptf_pyINETAObj.pickle', 'rb') as handle:
+				spec = pickle.loads(handle.read())
 
 	out_sep= param['OutImage_pick_separate']
 	out_comp= param['OutImage_pick_complete']
@@ -179,7 +182,7 @@ def main(args):
 			print("Step5==> Generating Plots...", end=' ')
 		
 			# Plot 1
-			if (args.steps.lower() in {'all','pick','filter','load+','pick+','filter+'}):
+			if (args.steps.lower() in {'all','pick','filter','plot','load+','pick+','filter+'}):
 				label=[]
 				for i in picking.frange(PPmin,PPmax,steps):
 					# print(i,PPmax,PPmin)
@@ -191,15 +194,15 @@ def main(args):
 				(figCom,axsCom)=plotting.plotSingle(spec,Xrng,Yrng,'Complete plot',out_comp) # Complete
 
 			# Plot 2
-			if (args.steps.lower() in {'all','filter','load+','pick+','filter+'}):
+			if (args.steps.lower() in {'all','filter','plot','load+','pick+','filter+'}):
 				plotting.plotFilteredPoints(figSep,axsSep,figCom,axsCom,spec,PPcs,PPdq,out_sep2,out_comp2)
 			
 			# Plot 3
-			if (args.steps.lower() in {'all','find','load+','pick+','filter+','find+'}):
+			if (args.steps.lower() in {'all','find','plot','load+','pick+','filter+','find+'}):
 				plotting.plotNetwork(spec,Xrng,Yrng,PPcs,PPdq,out_nets)
 
-			#Plot 4
-			if (args.steps.lower() in {'all','match','load+','pick+','filter+','find+','match+'}):
+			# Plot 4
+			if (args.steps.lower() in {'all','match','plot','load+','pick+','filter+','find+','match+'}):
 				plotting.plotMatches(spec,args.output,inetaDb,Xrng,Yrng)
 			print("...Done.")
 		
@@ -214,7 +217,7 @@ if __name__ == '__main__':
 	parser.add_argument('-o', '--output', default=os.getcwd(),
 		help='Optional: Full path to the output folder.(Default: Current folder)')
 	parser.add_argument('-s', '--steps', default="all",
-		help='Optional: Specify which steps you want to run. Can be one of {all,load,pick,filter,find,match,summary,load+,pick+,filter+,find+,match+}. Adding a + to the end of option runs all steps after as well.')
+		help='Optional: Specify which steps you want to run. Can be one of {all,load,pick,filter,find,match,plot,summary,load+,pick+,filter+,find+,match+}. Adding a + to the end of option runs all steps after the specified step.')
 	parser.add_argument('-f', '--figure', default="yes",
 		help='Optional: Generate figures- yes or no. Default: Yes')
 	args = parser.parse_args()

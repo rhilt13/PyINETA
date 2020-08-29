@@ -7,7 +7,8 @@ from shutil import copyfile
 from matplotlib.axes._axes import _log as matplotlib_axes_logger
 matplotlib_axes_logger.setLevel('ERROR')
 
-def plotSingle (pyinetaObj,Xlim,Ylim,label,imgname=None,grid=True):
+def plotSingle (pyinetaObj,Xlim,Ylim,label,imgname=None,grid=False):
+	sc=10
 	try:
 		X=pyinetaObj.Xlist[len(pyinetaObj.Xlist)-1]
 		Y=pyinetaObj.Ylist[len(pyinetaObj.Ylist)-1]
@@ -18,18 +19,18 @@ def plotSingle (pyinetaObj,Xlim,Ylim,label,imgname=None,grid=True):
 		title="{:.2e}".format(label[i])
 	else:
 		title=label
-	fig=plt.figure(figsize=(30, 30)) # This increases resolution
+	fig=plt.figure(figsize=(sc, sc)) # This increases resolution
 	ax = fig.add_subplot(111)
-	ax.plot(X,Y,'k.',)
+	ax.plot(X,Y,'k.',markersize=2)
 	ax.set_xlim(Xlim)
 	ax.set_ylim(Ylim)
-	ax.set_ylabel('Double Quantum', fontsize=30)
-	ax.set_xlabel('13C', fontsize=30)
-	ax.set_title(title, fontsize=30)
-	ax.tick_params(axis='both', which='major', labelsize=25)
+	ax.set_ylabel('Double Quantum', fontsize=sc)
+	ax.set_xlabel('13C', fontsize=sc)
+	ax.set_title(title, fontsize=sc)
+	ax.tick_params(axis='both', which='major', labelsize=(sc*0.8))
 	ax.invert_xaxis()
 	ax.invert_yaxis()
-	plt.tight_layout(pad=5, w_pad=0.5, h_pad=1.0)
+	plt.tight_layout(pad=(sc*0.15), w_pad=0.5, h_pad=1.0)
 	plt.minorticks_on()
 	if grid:
 		plt.grid(b=True, which='major', color='0.45', linestyle=':', linewidth=0.2)

@@ -61,13 +61,19 @@ class Pyineta:
 		q=0
 		
 		## Find horizontally aligned peaks
-		self.horzPts={}
+		# self.horzPts={}
+		# print(self.filteredPts)
 		if sel=="all":
+			alignedPts={}
+			# for level,points in self.filteredPts.items():
+			# 	alignedPts[level]=finding.horzAlign(points,dqt,sumXY,sdt)
+			# self.mergedPts=finding.mergeLevels(alignedPts,levdist)
 			self.mergedPts=finding.mergeLevels(self.filteredPts,levdist)
 		elif sel=="last":
 			self.mergedPts=self.filteredPts[len(self.filteredPts)-1]
 		else:
 			exit("ERROR: Unknown value for sel. Use either all or last.")
+		# print(self.mergedPts)
 		(self.horzPts)=finding.horzAlign(self.mergedPts,dqt,sumXY,sdt)
 		
 		## Find vertically aligned peaks from the set of horizontally aligned peaks
@@ -119,6 +125,7 @@ class Pyineta:
 			out=matching.matchDatabase(json_data,Pvals,Ptags,unknownConn,ambig,near,match,topo,hitSc,covSc,q,FinalPairs)
 			self.NetMatch.append(out)
 			self.NetTag.append(Ptags)
+			# print(out)
 			if (len(out)>5):
 				ct_match+=1
 				print("Step4.1==> Match found for Network",q)
@@ -128,7 +135,7 @@ class Pyineta:
 
 	def writeMatches (self,outFolder,match_file):
 		out_file = open(outFolder+"/"+match_file, 'w')
-		header="#NetworkNum\tID\tMatchName\tSolvent\tHitscore\tCoverageScore\tMatchedConnections\tUnmatchedConnections\n"
+		header="#NetworkNum\tID\tMatchName\tSolvent\tAmbiguityScore\tHitscore\tCoverageScore\tMatchedConnections\tUnmatchedConnections\n"
 		out_file.write(header)
 		for i in self.NetMatch:
 			outstr=str()
@@ -136,7 +143,7 @@ class Pyineta:
 				for j in range(5,len(i)):
 					name=i[j][0]
 					name_parts=name.split('::')
-					outline=i[0]+'\t'+name_parts[1]+'\t'+name_parts[2]+'\t'+name_parts[4]+'\t'+str(i[j][4])+'\t'+str(i[j][5])+"\t"
+					outline=i[0]+'\t'+name_parts[1]+'\t'+name_parts[2]+'\t'+name_parts[4]+'\t'+str(i[j][4])+'\t'+str(i[j][5])+'\t'+str(i[j][6])+"\t"
 					for k in i[j][2]:
 						outline+=k+'->'+str(i[j][2][k][0])+'-'+str(i[j][2][k][1])+','
 					outline+='\t'
@@ -224,7 +231,6 @@ def readConfig (configFile):
 	param["Ambiguity"]= config.getfloat("MatchDatabase", "Ambiguity")
 	param["CSMT"]= config.getfloat("MatchDatabase", "CSMT")
 	param["Match_tolerance"]= config.getint("MatchDatabase", "Match_tolerance")
-	param["DQMT"]= config.getfloat("MatchDatabase", "DQMT")
 	param["Topology_tolerance"]= config.getfloat("MatchDatabase", "Topology_tolerance")
 	param["Hit_Score_threshold"]= config.getfloat("MatchDatabase", "Hit_Score_threshold")
 	param["Coverage_Score_threshold"]= config.getfloat("MatchDatabase", "Coverage_Score_threshold")
@@ -241,8 +247,9 @@ def readConfig (configFile):
 	# return(general,peakPick,filterPoints,findNetwork,matchDatabase)
 	return(param)
 
-def stepError ():
-	print("ERROR:  Cound not find all required attributes in saved pickle file.")
+def stepError (errmsg):
+	print("ERROR:  %s" %(errmsg))
+	print("\tCound not find all required attributes in saved pickle file.")
 	print("\tMake sure you've run all previous steps.")
 	print("\tPyineta run not finished.")
 	sys.exit(0)
