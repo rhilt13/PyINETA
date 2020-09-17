@@ -1,33 +1,63 @@
-from scipy import spatial as spatial
-import numpy as np
-import pyineta.filtering as filtering
-from collections import defaultdict
+"""Functions for finding INETA networks.
+
+This file contains functions used by PyINETA to construct networks in the processed spectra.
+Includes the following functions:
+	* findClosestPoints - Uses KDTree to find close points.
+	* mergeLevels - Merge points found in different iterations of peak picking.
+	* horzAlign - Find horizontally aligned points.
+	* getPairs - Get pairs.
+	* buildNetwork - Build network.
+	* listPairs - List all pairs of points that are part of a network.
+"""
+
 import itertools
+import numpy as np
 import networkx as nx
+from collections import defaultdict
+from scipy import spatial as spatial
+import pyineta.clustering as clustering
 
 def findClosestPoints (Pts,Qry):
-	# print(Pts)
+	"""Uses KDTree to find close points.
+	
+	This function uses KDTree for nearest neighbor lookup to merge close points identified in multiple iterations.
+
+	Args:
+		Pts (ndarray): A 2D array of points.
+		Qry (ndarray): A 1D array with a single point.
+	
+	Returns:
+		A tuple with the distance and index of the closest point in Pts to Qry.
+	"""
+
 	PtsList = spatial.KDTree(Pts)
 	QryRes=PtsList.query(Qry)
 	return(QryRes)
 
 
 def mergeLevels (Clist,levdist):
+	"""Merge points found in different iterations of peak picking.
+
+	This function is used to merge points found in multiple iterations of peak picking into a single array.
+	Points that are closer to each other than a defined threshold are merged into a single point.
+
+	Args:
+		Clist (dict): A dict mapping the iteration number of peak picking to a list of cluster centers for points found in that iteration.
+		levdist (float): Threshold for merging cluster centers from different iterations into a single point.
+	
+	Returns:
+		ndarray : A 2D array of merged points. 
+	"""
+
 	mergedClistAll=np.vstack(list(Clist.values()))
 	mergedClist=Clist[0]
 	for k, C in list(Clist.items()):
 		for P in C:
-
 			res=findClosestPoints(mergedClist,P)
-			# print(res,P,mergedClist[res[1]])
 			if (res[0]>float(levdist)):
 				mergedClist=np.vstack([mergedClist, P])
-				# Clistmerge2[q]=
 			else:
-				closestP=np.vstack([mergedClist[res[1]], P])
-				# print "ClP=>",closestP, res[1], mergedClist[res[1]], mergedClist
 				avgP=np.mean([mergedClist[res[1]], P],0)
-				# print mergedClist[res[1]], P, avgP
 				mergedClist = np.delete(mergedClist, (res[1]), axis=0)
 				mergedClist=np.vstack([mergedClist, avgP])	
 	mergedClist.view('i8,i8').sort(order=['f0'], axis=0) # Sort numerically based on 1st column
@@ -35,35 +65,52 @@ def mergeLevels (Clist,levdist):
 	return(mergedClist)
 
 def horzAlign (P,threshold1,threshold2,threshold3):
+	"""Find horizontally aligned points.
+
+	This function starts building the INETA networks by finding the horizontally aligned points, i.e. points with same double quantum ppm values as defined by the thresholds.
+	To find these points, this function also filters points using basic INADEQUATE spectrum rules to only keeps points that satisfy these rules.
+
+	Args:
+		P (ndarray): A 2D array of final merged points.
+		threshold1 (float): Threshold to split the merged points along the DQ axis.
+		threshold2 (float): Threshold to check if the sum of 13C ppm values for two points equals their DQ ppm or not.
+		threshold3 (float): Threshold to check of the 2 points are equidistant from the diagonal.
+
+	Returns:
+		A dict mapping horizontally aligned peaks to their indices.
+	"""
+
 	ct=0
 	Pd=dict()
 	Pd[0]=P
-	AlnY=filtering.sortY(Pd,threshold1,1)
-	# AlnY=Sort(P,threshold1,1)
+	AlnY=clustering.splitY(Pd,threshold1,1)
 	filtI=defaultdict(list)
-	# print "AlnY==> ",AlnY
 	for i, lst in list(AlnY.items()):
-		# print lst,"==",len(lst)
 		if (len(lst)>=2):
 			for (a, b) in itertools.combinations(enumerate(lst), 2):
-				# print a,b,a[1],b[1]
 				meanY=(a[1][1]+b[1][1])/2
 				sumX=a[1][0]+b[1][0]
-				# print "Y=",a[1][1],b[1][1],"X=",a[1][0],b[1][0],"meanY=",meanY,"sumX=",sumX,"//",abs(meanY-sumX),"//",threshold2
 				if (abs(meanY-sumX)<=float(threshold2)):
 					D1=abs(a[1][0]-a[1][1]/2) # {diag:y=2x;mid-point:(y/2,y) so dist=x-y/2}
 					D2=abs(b[1][0]-b[1][1]/2)
 					if (abs(D1-D2)<=float(threshold3)):
 						filtI[ct].append(a[1])
 						filtI[ct].append(b[1])
-						# print filtI[ct]
 						ct+=1
-						# print "===>Passed Diag", D1,D2,threshold3,"Y=",a[1][1],b[1][1],"X=",a[1][0],b[1][0]
-					# else:
-						# print "#####Did not pass Diag", D1,D2,threshold3,"Y=",a[1][1],b[1][1],"X=",a[1][0],b[1][0]
 	return (filtI)
 
 def getPairs(lst):
+	"""Get pairs.
+
+	Get pairs of points.
+
+	Args:
+		lst (tuple): Input points.
+
+	Yields:
+		tuple: Pairs of points.
+	"""
+
 	i = iter(lst)
 	second = first = curr = next(i)
 	for curr in i:
@@ -71,10 +118,19 @@ def getPairs(lst):
 		first = curr
 	yield curr, second
 
-def buildNetwork (HorzPts,VertPts):	# Make network from selected peaks
-	# Input filtered set of Xpeak points from above function
-	# print HorzPts
-	# print VertPts
+def buildNetwork (HorzPts,VertPts):	
+	"""Build network.
+
+	This function connects the horizontally and vertically connected points to build complete INETA networks.
+
+	Args:
+		HorzPts (dict): A dict mapping horizontally aligned peaks to their indices.
+		VertPts (dict): A dict mapping vertically aligned peaks to their indices.
+
+	Returns:
+		list: list of lists with points belonging to a network.
+	"""
+
 	AllPts=[]
 	for i,v in list(VertPts.items()):
 		AllPts.append(v)
@@ -87,23 +143,27 @@ def buildNetwork (HorzPts,VertPts):	# Make network from selected peaks
 	for lst in AllPts:
 		lstt=tuple(map(tuple, lst))
 		for edge in getPairs(lstt):
-			# print type(edge)
-			# print type(lstt)
 			g.add_edge(*edge)
 	Net=list(nx.connected_components(g))
 	j=0
-	Netf=Net
-	# print "NetBefore=",Net
 	for i in Net:
 		Net[j]=list(i)
-		# for k in list(i):
-		# 	print k, VertPts
-			# if k in VertPts:
 		j+=1
-	# print "NetAfter=",Net
 	return (Net)
 
 def listPairs (horzPts,vertPts):
+	"""List all pairs of points that are part of a network.
+
+	This function is used by PyINETA to generate a final list of all the points that are included in a network.
+
+	Args:
+		horzPts (dict): A dict mapping horizontally aligned peaks to their indices.
+		vertPts (dict): A dict mapping vertically aligned peaks to their indices.
+
+	Returns:
+		list: A list of all the points included in a network.
+	"""
+
 	allPairs=[]
 	for i,v in list(vertPts.items()):
 		if (len(v)>=2):
