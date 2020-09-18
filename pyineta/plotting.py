@@ -1,13 +1,40 @@
+"""Functions for plotting INETA results
+
+This file includes all the plotting functions used by INETA.
+Includes the following funcitons:
+	* plotSingle - Generate a single plot for a given spectrum.
+	* plotFigSep - Generate image with spectra for each saved iteration in a separate panel.
+	* plotClusteredPoints - Plot the clustered points and theirr centers in the spectra.
+	* plotAllNet - Generate a plot with all the networks.
+	* plotNetwork - Plot all the networks overlaid in the spectra figure.
+	* colors - Get a specific color from a list of custom colormap.
+	* plotDb - Generate plots for all networks in the INETA database.
+	* plotMatches - Plot the matches for a network.
+"""
+
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-from itertools import combinations
 from shutil import copyfile
-
+from itertools import combinations
 from matplotlib.axes._axes import _log as matplotlib_axes_logger
 matplotlib_axes_logger.setLevel('ERROR')
 
 def plotSingle (pyinetaObj,Xlim,Ylim,label,imgname=None,grid=False):
+	"""Generate a single plot for a given spectrum.
+
+	Args:
+		pyinetaObj (pyineta object): The pyineta object with the spectra.
+		Xlim (tuple): Tuple of (min,max) values of the X axis (13C spectrum); (0,200) for a typical INADEQUATE spectra.
+		Ylim (tuple): Tuple of (min,max) values of the Y axis (DQ spectrum); (0,400) for a typical INADEQUATE spectra.
+		label (str): Plot title
+		imgname (str, optional): Filename to save the image. Not saved if not specified. Defaults to None.
+		grid (bool, optional): Show grid in the plot. Defaults to False.
+
+	Returns:
+		figure and axis handles for the generated image.
+	"""
+
 	sc=10
 	try:
 		X=pyinetaObj.Xlist[len(pyinetaObj.Xlist)-1]
@@ -19,7 +46,7 @@ def plotSingle (pyinetaObj,Xlim,Ylim,label,imgname=None,grid=False):
 		title="{:.2e}".format(label[i])
 	else:
 		title=label
-	fig=plt.figure(figsize=(sc, sc)) # This increases resolution
+	fig=plt.figure(figsize=(sc, sc)) # This changes figure size and resolution
 	ax = fig.add_subplot(111)
 	ax.plot(X,Y,'k.',markersize=2)
 	ax.set_xlim(Xlim)
@@ -41,6 +68,19 @@ def plotSingle (pyinetaObj,Xlim,Ylim,label,imgname=None,grid=False):
 	return(fig, ax)
 
 def plotFigSep (pyinetaObj,Xlim,Ylim,label,imgname=None):
+	"""Generate image with spectra for each saved iteration in a separate panel.
+
+	Args:
+		pyinetaObj (pyineta object): The pyineta object with the spectra.
+		Xlim (tuple): Tuple of (min,max) values of the X axis (13C spectrum); (0,200) for a typical INADEQUATE spectra.
+		Ylim (tuple): Tuple of (min,max) values of the Y axis (DQ spectrum); (0,400) for a typical INADEQUATE spectra.
+		label (str): Plot title.
+		imgname (str, optional): Filename to save the image. Not saved if not specified. Defaults to None.
+
+	Returns:
+		figure and axis handles for the generated image.
+	"""
+
 	X=pyinetaObj.Xlist
 	Y=pyinetaObj.Ylist
 	r=np.ceil(float(len(X))/2)
@@ -71,9 +111,26 @@ def plotFigSep (pyinetaObj,Xlim,Ylim,label,imgname=None):
 	plt.close(fig)
 	return(fig,axs)
 
-def plotFilteredPoints (figSep,axsSep,figCom,axsCom,pyinetaObj,PPcs,PPdq,out_sep2,out_comp2):
+def plotClusteredPoints (figSep,axsSep,figCom,axsCom,pyinetaObj,PPcs,PPdq,out_sep2,out_comp2):
+	"""Plot the clustered points and theirr centers in the spectra.
+	
+	This function generates an image of the spectra with dotted circles around every center of mass point to indicate the range of clustering. 
+
+	Args:
+		figSep (figure): Figure handle for the plot with separate panels.
+		axsSep (axes): Axes handle for the plot with separate panels.
+		figCom (figure): Figure handle for the plot with a single panel.
+		axsCom (axes): Axes handle for the plot with a single panel.
+		pyinetaObj (pyineta object): The pyineta object with the spectra.
+		PPcs (float): ppm threshold to cluster points along the 13C axis.
+		PPdq (float): ppm threshold to cluster points along the DQ axis.
+		out_sep2 (str): Filename to save the plot with separate panels.
+		out_comp2 (str): Filename to save the plot with single panel.
+	
+	"""
+
 	panels=len(pyinetaObj.Xlist)
-	Pts=pyinetaObj.filteredPts
+	Pts=pyinetaObj.clusteredPts
 	AllC=[]
 	for k, C in Pts.items():
 		r=int(k/2)
@@ -89,10 +146,22 @@ def plotFilteredPoints (figSep,axsSep,figCom,axsCom,pyinetaObj,PPcs,PPdq,out_sep
 			axsCom.add_patch(circ2)
 		AllC.extend(C)
 	if (panels>1):
-		figSep.savefig(out_sep2,dpi=300) 	# Separate
-	figCom.savefig(out_comp2,dpi=300) 		# Complete
+		figSep.savefig(out_sep2,dpi=300) 	# Separate plots
+	figCom.savefig(out_comp2,dpi=300) 		# Complete single plot with lowest level
 
 def plotAllNet (horzPts,vertPts,ax,rad):
+	"""Generate a plot with all the networks.
+
+	Args:
+		horzPts (dict): A dict mapping horizontally aligned peaks to their indices.
+		vertPts (dict): A dict mapping vertically aligned peaks to their indices.
+		ax ([type]): Axes handle for the plot with a single panel.
+		rad ([type]): clustering radius shown using dotted circles.
+
+	Returns:
+		axes handle for the resulting figure
+	"""
+
 	for i,v in list(horzPts.items()):
 		for q in v:
 			circ=plt.Circle(q,radius=rad,color='b',fill=False,linestyle='dotted',linewidth=0.8)
@@ -103,8 +172,19 @@ def plotAllNet (horzPts,vertPts,ax,rad):
 			ax.plot([a[1][0], b[1][0]], [a[1][1], b[1][1]], color='#f72d1c', linestyle='--', linewidth=2)
 	return (ax)
 
-def plotNetwork (pyinetaObj,Xrng,Yrng,PPcs,PPdq,out_nets=None):
-	(figFin,axsFin)=plotSingle(pyinetaObj,Xrng,Yrng,'Complete plot',grid=False)
+def plotNetwork (pyinetaObj,Xlim,Ylim,PPcs,PPdq,out_nets=None):
+	"""Plot all the networks overlaid in the spectra figure.
+
+	Args:
+		pyinetaObj (pyineta object): The pyineta object with the spectra.
+		Xlim (tuple): Tuple of (min,max) values of the X axis (13C spectrum); (0,200) for a typical INADEQUATE spectra.
+		Ylim (tuple): Tuple of (min,max) values of the Y axis (DQ spectrum); (0,400) for a typical INADEQUATE spectra.
+		PPcs (float): ppm threshold to cluster points along the 13C axis.
+		PPdq (float): ppm threshold to cluster points along the DQ axis.
+		out_nets (str, optional): Filename to save the plot. Defaults to None.
+	"""
+
+	(figFin,axsFin)=plotSingle(pyinetaObj,Xlim,Ylim,'Complete plot',grid=False)
 	## Getting the Diagonal
 	midXL=[]
 	midYL=[]
@@ -120,7 +200,6 @@ def plotNetwork (pyinetaObj,Xrng,Yrng,PPcs,PPdq,out_nets=None):
 	x2=midXL[indMax]
 	y2=midYL[indMax]
 	xlim=axsFin.get_xlim()
-	ylim=axsFin.get_ylim()
 	line_eqn = lambda x : ((y2-y1)/(x2-x1)) * (x - x1) + y1        
 	## generate range of x values based on your graph
 	xvals=np.arange(xlim[1],xlim[0],10)
@@ -131,12 +210,34 @@ def plotNetwork (pyinetaObj,Xrng,Yrng,PPcs,PPdq,out_nets=None):
 		figFin.savefig(out_nets,format='eps',dpi=300)
 
 def colors(n):
+	"""Get a specific color from a list of custom colormap.
+
+	Args:
+		n (int): Color number.
+
+	Returns:
+		str: Hex code for the specified color.
+	"""
+
 	# Custom colormap for visually distinct colors:
-	# Colors are: orangered, darkblue,forestgreen,maroon3,fuchsia,cornflower,lime,aqua,moccasin,yellow
+	# Colors are: orangered,darkblue,forestgreen,maroon3,fuchsia,cornflower,lime,aqua,moccasin,yellow
 	col_list=['#ff4500','#00008b','#228b22','#b03060','#ff00ff','#6495ed','#00ff00','#00ffff','#ffe4b5','#ffff00']
 	return col_list[n]
 
 def plotDb (dbNet,ax,col,pos,name):
+	"""Generate plots for all networks in the INETA database.
+
+	Args:
+		dbNet (dict): The INETA database in json format.
+		ax (axes): axes handle.
+		col (str): color.
+		pos (int): text position.
+		name (str): plot title (metabolite name).
+
+	Returns:
+		axes handle for the plot.
+	"""
+
 	X=[]
 	Y=[]
 	ID=[]
@@ -172,7 +273,19 @@ def plotDb (dbNet,ax,col,pos,name):
 	ax.text(2,pos*5+5,name_parts[2],fontsize='20',color=col,ha='right')
 	return(ax)
 
-def plotMatches (pyinetaObj,outFolder,db_file,Xrng,Yrng):
+def plotMatches (pyinetaObj,outFolder,db_file,Xlim,Ylim):
+	"""Plot the matches for a network.
+
+	This function generates a plot for an unknown network with the matched networks overlaid on top.
+	Useful for visually assessing the matches identified by pyineta.
+
+	Args:
+		pyinetaObj (pyineta object): The pyineta object with the spectra.
+		outFolder (str): path to the output folder for the images.
+		db_file (dict): The INETA database in json format.
+		Xlim (tuple): Tuple of (min,max) values of the X axis (13C spectrum); (0,200) for a typical INADEQUATE spectra.
+		Ylim (tuple): Tuple of (min,max) values of the Y axis (DQ spectrum); (0,400) for a typical INADEQUATE spectra.
+	"""
 	
 	# Initialize folders and output files:
 	outNetFigs=outFolder+"/Network_figs/"
@@ -192,7 +305,7 @@ def plotMatches (pyinetaObj,outFolder,db_file,Xrng,Yrng):
 		pts=list()
 		pts.append(i[1])
 		pts.append(i[2])
-		(figCom,axsCom)=plotSingle(pts,Xrng,Yrng,i[0],netfig,grid=False)
+		(figCom,axsCom)=plotSingle(pts,Xlim,Ylim,i[0],netfig,grid=False)
 		axsCom.scatter(i[1],i[2], c='0.45', s=100,marker='o',facecolors='none')
 		for label, x, y in zip(i[3],i[1],i[2]):	
 			axsCom.annotate(label, xy=(x, y), xytext=(-20, 20),fontsize='25',textcoords='offset points', ha='right', va='bottom')

@@ -108,7 +108,7 @@ def getPairs(lst):
 		lst (tuple): Input points.
 
 	Yields:
-		tuple: Pairs of points.
+		tuple : Pairs of points.
 	"""
 
 	i = iter(lst)
@@ -128,7 +128,7 @@ def buildNetwork (HorzPts,VertPts):
 		VertPts (dict): A dict mapping vertically aligned peaks to their indices.
 
 	Returns:
-		list: list of lists with points belonging to a network.
+		list : list of lists with points belonging to a network.
 	"""
 
 	AllPts=[]
@@ -152,7 +152,7 @@ def buildNetwork (HorzPts,VertPts):
 	return (Net)
 
 def listPairs (horzPts,vertPts):
-	"""List all pairs of points that are part of a network.
+	"""List all pairs of horizontally connected points that are part of a network.
 
 	This function is used by PyINETA to generate a final list of all the points that are included in a network.
 
@@ -161,7 +161,7 @@ def listPairs (horzPts,vertPts):
 		vertPts (dict): A dict mapping vertically aligned peaks to their indices.
 
 	Returns:
-		list: A list of all the points included in a network.
+		list : A list of all horizontally connected pairs of points included in a network.
 	"""
 
 	allPairs=[]

@@ -80,7 +80,7 @@ def frange (start,end,parts):
         parts (int): Indicates how many parts to split the range of start-end.
 
     Returns:
-        ndarray: A 1D array of floating point values ranging from start to end of size parts.
+        ndarray : A 1D array of floating point values ranging from start to end of size parts.
     """
 
     duration=abs(end-start)
@@ -101,9 +101,9 @@ def pick (In,xppm,yppm,PPmin,PPmax,steps):
         steps (int): Number of iterations to find peaks within the PPmin to PPmax range.
 
     Returns:
-        dict: A dict mapping an array of points (x,y) to the iteration number it was found in.
-        dict: A dict mapping an array of x axis values (13C ppm values) to the iteration number it was found in.
-        dict: A dict mapping an array of y axis values (DQ ppm values) to the iteration number it was found in.
+        dict : A dict mapping an array of points (x,y) to the iteration number it was found in.
+        dict : A dict mapping an array of x axis values (13C ppm values) to the iteration number it was found in.
+        dict : A dict mapping an array of y axis values (DQ ppm values) to the iteration number it was found in.
     """
 
     points=np.copy(In)

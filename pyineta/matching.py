@@ -1,6 +1,29 @@
+"""Functions for matching INETA networks to the database.
+
+This file includes all the functions used by PyINETA to match the identified networks in the query spectrum to the INADEQUATE spectra of known metabolites in the INETA database.
+Includes the following functions:
+	* prepUnknowns - Add tags and connection names to the unknown networks.
+	* matchTag - Match the tags from matched peaks to the list of unknown connections.
+	* matchDatabase - Match unknown networks to networks in the InETA database.
+"""
+
 import itertools
 
 def prepUnknowns (Pvals,Pairs):
+	"""Add tags and connection names to the unknown networks.
+
+	This function adds CX tags to the peaks that wil be used when matching them to teh database.
+
+	Args:
+		Pvals (list): List of all points in a single network.
+		Pairs (list): A list of all horizontally connected pairs of points included in a network.
+	
+	Returns:
+		list : List of Tags for naming the unknown peaks in a network.
+		list : List of lists with pairs of connected tags.
+		list : List of 13C and DQ ppm values corresponding to the list of connected tags.
+	"""
+
 	TagDict={}
 	Ptags=[]
 	for i in range(0,len(Pvals)):
@@ -17,12 +40,24 @@ def prepUnknowns (Pvals,Pairs):
 		newP.extend(new1)
 	newP.sort()
 	FinalPairs=list(newP for newP,_ in itertools.groupby(newP))
-	# print FinalPairs
-	#print TagDict
 	unknownConn= [[TagDict[j] for j in x] for x in FinalPairs]
 	return(Ptags,unknownConn,FinalPairs)
 
-def matchTag (match_peaks,candidate_peaks,unknown_conn):
+def matchTag (match_peaks,unknown_conn):
+	"""Match the tags from matched peaks to the list of unknown connections.
+
+	This function is used to map known peak assignments to the matched peaks in an unknown network.
+
+	Args:
+		match_peaks (dict): Dict mapping the unknown peaks to matched peaks from database.
+		unknown_conn (list): List of all unknown connections of a network.
+
+	Returns:
+		dict : Dict mapping pairs of peaks with unknown connections to known connections from database networks.
+		dict : Dict mapping unmatched pairs of conenctions to '?'.
+		int : Count of hte number of matched connections.
+	"""
+
 	final_match={}
 	no_match={}
 	hits=0
@@ -44,7 +79,26 @@ def matchTag (match_peaks,candidate_peaks,unknown_conn):
 	return (final_match,no_match,hits)
 	
 def matchDatabase (json_db,Pval,tag,unknown_conn,amb_tol,near_tol,match_tol,top_tol,hit_tol,cov_tol,NetNum,Pts):
-#MatchTag
+	"""Match unknown networks to networks in the InETA database.
+
+	Args:
+		json_db (dict): The INETA database in json format.
+		Pval (list): List of all points in a single network.
+		tag (list): List of tags for the unknown peaks.
+		unknown_conn (list): List of unknown connections.
+		amb_tol ([type]): Amibiguity tolerance (Removes all database entries with ambiguity higher than this tolerance).
+		near_tol ([type]): Tolerance for distance in the 13C dimension between unknown peak and a match database peak.
+		match_tol ([type]): Tolerance for number of matches in a single network.
+		top_tol ([type]): Topology tolerance (How far the point can be in all directions from the match peak point).
+		hit_tol ([type]): Hit score threshold.
+		cov_tol ([type]): Coverage score threshold.
+		NetNum (int): Network number.
+		Pts (list): List of pairs of horizontally connected peaks.
+
+	Returns:
+		A list of networks with their corresponding hits and hit details.
+	"""
+
 	X = [float(i[0]) for i in Pval]
 	Y = [float(i[1]) for i in Pval]
 	hitList=[]
@@ -53,15 +107,10 @@ def matchDatabase (json_db,Pval,tag,unknown_conn,amb_tol,near_tol,match_tol,top_
 	hitList.append(Y)
 	hitList.append(tag)
 	hitList.append(Pts)
-	# print X
-	# print Y
-	# print Pval
 	for i in json_db:
-		# print i
 		matchCnt=0
 		matchCS=[]
 		if (len(json_db[i]['Networks'] ) >=1):
-			# print json_db[i]['Networks'], len(json_db[i]['Networks'] )
 			if (json_db[i]['Ambiguity'] <= float(amb_tol)):
 				ambScore=json_db[i]['Ambiguity']
 				for xval in X:
@@ -69,59 +118,34 @@ def matchDatabase (json_db,Pval,tag,unknown_conn,amb_tol,near_tol,match_tol,top_
 						if CS not in matchCS:
 							CSlist=json_db[i]['ChemicalShifts'][CS]
 							meanCS=sum(CSlist) / float(len(CSlist))
-							# print i, xval, CS,"////", meanCS, matchCS
 							if (abs(xval-meanCS)<= float(near_tol)):
-								# print i, xval, meanCS, "==", abs(xval-meanCS), "//", near_tol
 								matchCS.append(CS)
 								matchCnt+=1
 				if (matchCnt>= float(match_tol)):
-					# print i, matchCS
 					found={}
-					candPeaks={}
 					matchPeaks={}
 					for j in json_db[i]['Networks']:
-						# print "j==>",j
-						candPeaks.setdefault(j[0][0], set()).add(j[1][0])
 						for k in j:
-							# print "k==>",k
 							break_outer_loop=False
 							for l in k[1]:
-								# print "l==>",l
 								for ind,xval in enumerate(X):
-									mp=[]
-									# print ind,xval,Y[ind],tag[ind]
-									# print i,"=",k[0],l,"//",tag[ind],xval,Y[ind],"//",(xval-l[0])**2,(Y[ind]-l[1])**2,((xval-l[0])**2 + (Y[ind]-l[1])**2)**(1/2.0),top_tol
 									if (((xval-l[0])**2 + (Y[ind]-l[1])**2)**(1/2.0) <= float(top_tol)):
 										matchPeaks[tag[ind]]=k[0]
-										# print "matchPeaks",len(tag),tag[ind],matchPeaks
-										# print i,"HEE",l,xval,Y[ind],(xval-l[0])**2,(Y[ind]-l[1])**2,((xval-l[0])**2 + (Y[ind]-l[1])**2)**1/2,top_tol
 										found[tag[ind]]=1
 										break_outer_loop=True
 										break
 								if break_outer_loop: break
-					# print(i)
-					# print("matchPeaks==>",matchPeaks)
-					# print("candPeaks==>",candPeaks)
-					# print("unknown_conn==>",unknown_conn)
-					(fin_match,no_match,hitCount)=matchTag(matchPeaks,candPeaks,unknown_conn)
+					(fin_match,no_match,hitCount)=matchTag(matchPeaks,unknown_conn)
 					hitScore=float("{0:.3f}".format(float(hitCount)/float(len(json_db[i]['Networks']))))
 					CovScore=float("{0:.3f}".format(float(len(found))/float(len(tag))))
-					# print len(found),found,len(tag),tag 
-					# print "fin_match==>",fin_match,
-					# print "no_match==>",no_match,
-					# print "hitCount=",hitCount," Total=",len(json_db[i]['Networks']),"=> hitScore=",hitScore
 					if (hitScore >= float(hit_tol) and CovScore >= float(cov_tol)):
 						hitOut=[]
 						hitOut.append(i)
-#						print json_db[i]['Networks']
 						hitOut.append([json_db[i]['Networks']])
-						# IndDict=ParseDbNetwork(i, json_db[i]['Networks'])
-						# hitOut.append(IndDict)
 						hitOut.append(fin_match)
 						hitOut.append(no_match)
 						hitOut.append(ambScore)
 						hitOut.append(hitScore)
 						hitOut.append(CovScore)
 						hitList.append(hitOut)
-						# print hitList
 	return(hitList)
