@@ -10,9 +10,12 @@ Includes the following funcitons:
 	* colors - Get a specific color from a list of custom colormap.
 	* plotDb - Generate plots for all networks in the INETA database.
 	* plotMatches - Plot the matches for a network.
+	* plotIndividualMatch - Plot individual network with individual database entries of choice.
+
 """
 
 import os
+import json
 import numpy as np
 import matplotlib.pyplot as plt
 from shutil import copyfile
@@ -35,7 +38,7 @@ def plotSingle (pyinetaObj,Xlim,Ylim,label,imgname=None,grid=False):
 		figure and axis handles for the generated image.
 	"""
 
-	sc=10
+	sc=30
 	try:
 		X=pyinetaObj.Xlist[len(pyinetaObj.Xlist)-1]
 		Y=pyinetaObj.Ylist[len(pyinetaObj.Ylist)-1]
@@ -327,4 +330,63 @@ def plotMatches (pyinetaObj,outFolder,db_file,Xlim,Ylim):
 				col+=1
 				if col==10:
 					col=0
+		try:
+			X=pyinetaObj.Xlist[len(pyinetaObj.Xlist)-1]
+			Y=pyinetaObj.Ylist[len(pyinetaObj.Ylist)-1]
+		except AttributeError:
+			X=pyinetaObj[0]
+			Y=pyinetaObj[1]
+		axsCom.plot(X,Y,'k.',markersize=2)
 		figCom.savefig(netfig, dpi=300)
+
+def plotIndividualMatch(pyinetaObj,db_file,netNum,id,Xlim,Ylim):
+	"""Plot individual network with individual database entries of choice.
+
+	This function allows users to plot any network of their choosing with a database entry.
+	This is helpful to generate overlays of any database entry on top of the spectra for visual comparison.
+
+	Args:
+		pyinetaObj (pyineta object): The pyineta object with the spectra.
+		db_file (dict): The INETA database in json format.
+		netNum (str): The network number to plot (Eg: Network1).
+		id (str): A string identifier that matches part or all of the Internal IDs used for the INETA database entries.
+		Xlim (tuple): Tuple of (min,max) values of the X axis (13C spectrum); (0,200) for a typical INADEQUATE spectra.
+		Ylim (tuple): Tuple of (min,max) values of the Y axis (DQ spectrum); (0,400) for a typical INADEQUATE spectra.
+	
+	Returns:
+		figure and axes handle for the plot.
+	"""
+
+	for nets in pyinetaObj.NetMatch:
+		if netNum in nets:
+			col=0
+			pos=0
+			netfig="temp_"+netNum+"_"+id+".eps"
+			pts=list()
+			pts.append(nets[1])
+			pts.append(nets[2])
+			(figCom,axsCom)=plotSingle(pts,Xlim,Ylim,nets[0],netfig,grid=False)
+			axsCom.scatter(nets[1],nets[2], c='0.45', s=100,marker='o',facecolors='none')
+			for label, x, y in zip(nets[3],nets[1],nets[2]):	
+				axsCom.annotate(label, xy=(x, y), xytext=(-20, 20),fontsize='25',textcoords='offset points', ha='right', va='bottom')
+			for j in nets[4]:
+				axsCom.plot([j[0][0], j[1][0]], [j[0][1], j[1][1]], color='0.45', linestyle='--', linewidth=4)
+
+			with open(db_file, 'r') as json_file:
+				json_db = json.load(json_file)
+			for i in json_db:
+				if id in i:
+					axsCom=plotDb(json_db[i]['Networks'],axsCom,colors(col),pos,i)
+					pos+=1
+					col+=1
+					if col==10:
+						col=0
+			try:
+				X=pyinetaObj.Xlist[len(pyinetaObj.Xlist)-1]
+				Y=pyinetaObj.Ylist[len(pyinetaObj.Ylist)-1]
+			except AttributeError:
+				X=pyinetaObj[0]
+				Y=pyinetaObj[1]
+			axsCom.plot(X,Y,'k.',markersize=2)
+			figCom.savefig(netfig, dpi=300)
+	return(figCom,axsCom)
