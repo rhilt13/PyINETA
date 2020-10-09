@@ -5,7 +5,7 @@ np.set_printoptions(precision=3)
 
 from datetime import datetime
 import pyineta.picking as picking
-import pyineta.filtering as filtering
+import pyineta.clustering as clustering
 import pyineta.finding as finding
 import pyineta.matching as matching
 
@@ -44,33 +44,31 @@ class Pyineta:
 				self.In=picking.shifting(self.In,*shift)
 			else:
 				exit("ERROR: Argument shift needs to be a list with 4 items:padding units, total size of X axis, total size of Y axis and direction (either pos or neg). Eg: [20,4096,8192,'pos']")
-		(self.Pts,self.Xlist,self.Ylist,self.P)=picking.pick(self.In,self.Cppm,self.DQppm,PPmin,PPmax,steps)
+		(self.Pts,self.Xlist,self.Ylist)=picking.pick(self.In,self.Cppm,self.DQppm,PPmin,PPmax,steps)
 
-	# Step 2: Filter points
+	# Step 2: Cluster points
 
-	def filterPoints (self,PPcs,PPdq):
-		self.filteredPts={}
+	def clusterPoints (self,PPcs,PPdq):
+		self.clusteredPts={}
 		for k, P in list(self.Pts.items()):
-			sortedP=filtering.sortX(P,float(PPcs),0)
-			ysortedP=filtering.sortY(sortedP,float(PPdq),1)
-			self.filteredPts[k]=filtering.centerMass(ysortedP,"median")
+			sortedP=clustering.gather(P,float(PPcs),0)
+			ysortedP=clustering.splitY(sortedP,float(PPdq),1)
+			self.clusteredPts[k]=clustering.centerMass(ysortedP,"median")
 
 	# Step 3: Find Networks
 
 	def findNetwork (self,levdist,dqt,sumXY,sdt,cst,sel='all'):
-		q=0
 		
 		## Find horizontally aligned peaks
 		# self.horzPts={}
-		# print(self.filteredPts)
+		# print(self.clusteredPts)
 		if sel=="all":
-			alignedPts={}
-			# for level,points in self.filteredPts.items():
+			# for level,points in self.clusteredPts.items():
 			# 	alignedPts[level]=finding.horzAlign(points,dqt,sumXY,sdt)
 			# self.mergedPts=finding.mergeLevels(alignedPts,levdist)
-			self.mergedPts=finding.mergeLevels(self.filteredPts,levdist)
+			self.mergedPts=finding.mergeLevels(self.clusteredPts,levdist)
 		elif sel=="last":
-			self.mergedPts=self.filteredPts[len(self.filteredPts)-1]
+			self.mergedPts=self.clusteredPts[len(self.clusteredPts)-1]
 		else:
 			exit("ERROR: Unknown value for sel. Use either all or last.")
 		# print(self.mergedPts)
@@ -79,7 +77,7 @@ class Pyineta:
 		## Find vertically aligned peaks from the set of horizontally aligned peaks
 		horzMerged = [self.horzPts[k][0] for k in self.horzPts]
 		horzMerged.extend([self.horzPts[k][1] for k in self.horzPts])
-		self.vertPts=filtering.sortX(horzMerged,cst,0) # 0 for x-axis, 1 of y-axis
+		self.vertPts=clustering.gather(horzMerged,cst,0) # 0 for x-axis, 1 of y-axis
 
 		## Build network from aligned peaks
 		self.Networks=finding.buildNetwork(self.horzPts,self.vertPts)
@@ -114,7 +112,6 @@ class Pyineta:
 
 		self.NetTag=[]
 		self.NetMatch=[]
-		TagDict={}
 		q=0
 		ct_match=0
 		for Pvals in self.Networks:
@@ -165,12 +162,12 @@ class Pyineta:
 			outstr="# of picked peaks in all steps: "+str(ct_peak1)+"\n"
 			out_file.write(outstr)
 
-			# How many total peaks after filtering
-			ct_peak2=np.vstack(list(self.filteredPts.values())).shape[0]
-			outstr="# of peaks after filtering: "+str(ct_peak2)+"\n"
+			# How many total peaks after clustering
+			ct_peak2=np.vstack(list(self.clusteredPts.values())).shape[0]
+			outstr="# of peaks after clustering: "+str(ct_peak2)+"\n"
 			out_file.write(outstr)
 
-			# How many filtered points after clustering close pts from steps
+			# How many clustered points after clustering close pts from steps
 			outstr="# of peaks retained after merging steps: "+str(self.mergedPts.shape[0])+"\n"
 			out_file.write(outstr)
 
@@ -194,57 +191,56 @@ def readConfig (configFile):
 	config = configparser.ConfigParser()
 	config.read("config.ini")
 	param=dict()
-	param["Ft_File"]= config.get("PeakPick", "Ft_File")
-	param["Data_Matrix_File"]= config.get("PeakPick", "Data_Matrix_File")
-	param["13C_Ppm_File"]= config.get("PeakPick", "13C_Ppm_File")
-	param["Double_Quantum_File"]= config.get("PeakPick", "Double_Quantum_File")
-	param["Xrange_min"]= config.getint("PeakPick", "Xrange_min")
-	param["Xrange_max"]= config.getint("PeakPick", "Xrange_max")
-	param["Yrange_min"]= config.getint("PeakPick", "Yrange_min")
-	param["Yrange_max"]= config.getint("PeakPick", "Yrange_max")
-	param["OutImage_pick_separate"]= config.get("PeakPick", "OutImage_pick_separate")
-	param["OutImage_pick_complete"]= config.get("PeakPick", "OutImage_pick_complete")
-	param["Shift"]=config.get("PeakPick","Shift")
-	param["Direction"]=config.get("PeakPick","Direction")
-	param["Shift13C"]=config.getint("PeakPick","Shift13C")
-	param["Full13C"]=config.getint("PeakPick","Full13C")
-	param["FullDQ"]=config.getint("PeakPick","FullDQ")
-	param["PPmin"]= config.getfloat("PeakPick", "PPmin")
-	param["PPmax"]= config.getfloat("PeakPick", "PPmax")
-	param["steps"]= config.getint("PeakPick", "steps")
-	
-	param["PPCS"]= config.getfloat("FilterPoints", "PPCS")
-	param["PPDQ"]= config.getfloat("FilterPoints", "PPDQ")
-	param["OutImage_filter_separate"]= config.get("FilterPoints", "OutImage_filter_separate")
-	param["OutImage_filter_complete"]= config.get("FilterPoints", "OutImage_filter_complete")
+	try:
+		param["Ft_File"]= config.get("PeakPick", "Ft_File")
+		param["Data_Matrix_File"]= config.get("PeakPick", "Data_Matrix_File")
+		param["13C_Ppm_File"]= config.get("PeakPick", "13C_Ppm_File")
+		param["Double_Quantum_File"]= config.get("PeakPick", "Double_Quantum_File")
+		param["Xrange_min"]= config.getint("PeakPick", "Xrange_min")
+		param["Xrange_max"]= config.getint("PeakPick", "Xrange_max")
+		param["Yrange_min"]= config.getint("PeakPick", "Yrange_min")
+		param["Yrange_max"]= config.getint("PeakPick", "Yrange_max")
+		param["OutImage_pick_separate"]= config.get("PeakPick", "OutImage_pick_separate")
+		param["OutImage_pick_complete"]= config.get("PeakPick", "OutImage_pick_complete")
+		param["Shift"]=config.get("PeakPick","Shift")
+		param["Direction"]=config.get("PeakPick","Direction")
+		param["Shift13C"]=config.getint("PeakPick","Shift13C")
+		param["Full13C"]=config.getint("PeakPick","Full13C")
+		param["FullDQ"]=config.getint("PeakPick","FullDQ")
+		param["PPmin"]= config.getfloat("PeakPick", "PPmin")
+		param["PPmax"]= config.getfloat("PeakPick", "PPmax")
+		param["steps"]= config.getint("PeakPick", "steps")
+		
+		param["PPCS"]= config.getfloat("ClusterPoints", "PPCS")
+		param["PPDQ"]= config.getfloat("ClusterPoints", "PPDQ")
+		param["OutImage_cluster_separate"]= config.get("ClusterPoints", "OutImage_cluster_separate")
+		param["OutImage_cluster_complete"]= config.get("ClusterPoints", "OutImage_cluster_complete")
 
-	param["Select"]= config.get("FindNetwork", "Select")
-	param["LevelPointsDistance"]= config.getfloat("FindNetwork", "LevelPointsDistance")
-	param["DQT"]= config.getfloat("FindNetwork", "DQT")
-	param["SumXY"]= config.getfloat("FindNetwork", "SumXY")
-	param["SDT"]= config.getfloat("FindNetwork", "SDT")
-	param["CST"]= config.getfloat("FindNetwork", "CST")
-	param["Network_output_file"]= config.get("FindNetwork", "Network_output_file")
-	param["OutImage_network_AllNets"]= config.get("FindNetwork", "OutImage_network_AllNets")
+		param["Select"]= config.get("FindNetwork", "Select")
+		param["LevelPointsDistance"]= config.getfloat("FindNetwork", "LevelPointsDistance")
+		param["DQT"]= config.getfloat("FindNetwork", "DQT")
+		param["SumXY"]= config.getfloat("FindNetwork", "SumXY")
+		param["SDT"]= config.getfloat("FindNetwork", "SDT")
+		param["CST"]= config.getfloat("FindNetwork", "CST")
+		param["Network_output_file"]= config.get("FindNetwork", "Network_output_file")
+		param["OutImage_network_AllNets"]= config.get("FindNetwork", "OutImage_network_AllNets")
 
-	param["Database_file"]= config.get("MatchDatabase", "Database_file")
-	param["Ambiguity"]= config.getfloat("MatchDatabase", "Ambiguity")
-	param["CSMT"]= config.getfloat("MatchDatabase", "CSMT")
-	param["Match_tolerance"]= config.getint("MatchDatabase", "Match_tolerance")
-	param["Topology_tolerance"]= config.getfloat("MatchDatabase", "Topology_tolerance")
-	param["Hit_Score_threshold"]= config.getfloat("MatchDatabase", "Hit_Score_threshold")
-	param["Coverage_Score_threshold"]= config.getfloat("MatchDatabase", "Coverage_Score_threshold")
-	param["Matches_list_output_file"]= config.get("MatchDatabase", "Matches_list_output_file")
-	param["Summary_file"]= config.get("MatchDatabase", "Summary_file")
+		param["Database_file"]= config.get("MatchDatabase", "Database_file")
+		param["Ambiguity"]= config.getfloat("MatchDatabase", "Ambiguity")
+		param["CSMT"]= config.getfloat("MatchDatabase", "CSMT")
+		param["Match_tolerance"]= config.getint("MatchDatabase", "Match_tolerance")
+		param["Topology_tolerance"]= config.getfloat("MatchDatabase", "Topology_tolerance")
+		param["Hit_Score_threshold"]= config.getfloat("MatchDatabase", "Hit_Score_threshold")
+		param["Coverage_Score_threshold"]= config.getfloat("MatchDatabase", "Coverage_Score_threshold")
+		param["Matches_list_output_file"]= config.get("MatchDatabase", "Matches_list_output_file")
+		param["Summary_file"]= config.get("MatchDatabase", "Summary_file")
 
-	# config.optionxform=str
-	# config.read(configFile)
-	# general=dict(config.items('General'))
-	# peakPick=dict(config.items('PeakPick'))
-	# filterPoints=dict(config.items('FilterPoints'))
-	# findNetwork=dict(config.items('FindNetwork'))
-	# matchDatabase=dict(config.items('MatchDatabase'))
-	# return(general,peakPick,filterPoints,findNetwork,matchDatabase)
+	except:
+		print("\nERROR: Encountered problems with the config file.")
+		print("\tDo you have an older version?")
+		print("\tIt should match template config file provided.")
+		print("### ERROR MESSAGE ###")
+		raise
 	return(param)
 
 def stepError (errmsg):
@@ -253,6 +249,3 @@ def stepError (errmsg):
 	print("\tMake sure you've run all previous steps.")
 	print("\tPyineta run not finished.")
 	sys.exit(0)
-# def writeFiles ():
-
-
