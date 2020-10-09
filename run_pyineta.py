@@ -85,21 +85,21 @@ def main(args):
 		pickle.dump(spec, open('ptf_pyINETAObj.pickle', 'wb'))
 		print("..Done.")
 
-	## Step 2: Filter points
+	## Step 2: Cluster points
 
 	PPcs=param['PPCS']
 	PPdq=param['PPDQ']
 
-	if args.steps.lower() in {'all','filter','load+','pick+','filter+'}:
+	if args.steps.lower() in {'all','cluster','load+','pick+','cluster+'}:
 
-		if args.steps.lower() in {'filter','filter+'}:
+		if args.steps.lower() in {'cluster','cluster+'}:
 			with open('ptf_pyINETAObj.pickle', 'rb') as handle:
 				spec = pickle.loads(handle.read())
 
 		
-		print("Step2==> Filtering points using PPCS=",PPcs,"and PPDQ=",PPdq,"and finding center of mass for clustered points...", end=' ')
+		print("Step2==> Clustering points using PPCS=",PPcs,"and PPDQ=",PPdq,"and finding center of mass for clustered points...", end=' ')
 		try:
-			spec.filterPoints(PPcs,PPdq)
+			spec.clusterPoints(PPcs,PPdq)
 		except AttributeError as atte:
 			pyineta.stepError(atte)
 		pickle.dump(spec, open('ptf_pyINETAObj.pickle', 'wb'))
@@ -107,7 +107,7 @@ def main(args):
 
 	## Step 3: Find Networks
 	
-	if args.steps.lower() in {'all','find','load+','pick+','filter+','find+'}:
+	if args.steps.lower() in {'all','find','load+','pick+','cluster+','find+'}:
 
 		if args.steps.lower() in {'find','find+'}:
 			with open('ptf_pyINETAObj.pickle', 'rb') as handle:
@@ -133,7 +133,7 @@ def main(args):
 
 	inetaDb=param['Database_file']
 	
-	if args.steps.lower() in {'all','match','load+','pick+','filter+','find+','match+'}:
+	if args.steps.lower() in {'all','match','load+','pick+','cluster+','find+','match+'}:
 
 		if args.steps.lower() in {'match','match+'}:
 			with open('ptf_pyINETAObj.pickle', 'rb') as handle:
@@ -152,27 +152,29 @@ def main(args):
 			pyineta.stepError(atte)
 		#
 		match_file= param['Matches_list_output_file']
-		spec.writeMatches(args.output,match_file)
+		spec.writeMatches(args.outdir,match_file)
 		pickle.dump(spec, open('ptf_pyINETAObj.pickle', 'wb'))
 		print("...Done.")
 
-	if args.steps.lower() in {'all','summary','load+','pick+','filter+','find+','match+'}:
+	if args.steps.lower() in {'all','summary','load+','pick+','cluster+','find+','match+'}:
 		
 		if args.steps.lower() in {'summary'}:
 			with open('ptf_pyINETAObj.pickle', 'rb') as handle:
 				spec = pickle.loads(handle.read())
 
 		summary_file=param['Summary_file']
-		spec.summarize(args.output,summary_file)
-	#plotting for all
+		spec.summarize(args.outdir,summary_file)
+	
+	## Plotting for all
+
 	if args.steps.lower() in {'plot'}:
 		with open('ptf_pyINETAObj.pickle', 'rb') as handle:
 				spec = pickle.loads(handle.read())
 
 	out_sep= param['OutImage_pick_separate']
 	out_comp= param['OutImage_pick_complete']
-	out_sep2= param['OutImage_filter_separate']
-	out_comp2= param['OutImage_filter_complete']
+	out_sep2= param['OutImage_cluster_separate']
+	out_comp2= param['OutImage_cluster_complete']
 	out_nets=param['OutImage_network_AllNets']
 
 	if args.steps.lower() not in {'load','summary'}:
@@ -182,7 +184,7 @@ def main(args):
 			print("Step5==> Generating Plots...", end=' ')
 		
 			# Plot 1
-			if (args.steps.lower() in {'all','pick','filter','plot','load+','pick+','filter+'}):
+			if (args.steps.lower() in {'all','pick','cluster','plot','load+','pick+','cluster+'}):
 				label=[]
 				for i in picking.frange(PPmin,PPmax,steps):
 					# print(i,PPmax,PPmin)
@@ -194,30 +196,44 @@ def main(args):
 				(figCom,axsCom)=plotting.plotSingle(spec,Xrng,Yrng,'Complete plot',out_comp) # Complete
 
 			# Plot 2
-			if (args.steps.lower() in {'all','filter','plot','load+','pick+','filter+'}):
-				plotting.plotFilteredPoints(figSep,axsSep,figCom,axsCom,spec,PPcs,PPdq,out_sep2,out_comp2)
+			if (args.steps.lower() in {'all','cluster','plot','load+','pick+','cluster+'}):
+				plotting.plotClusteredPoints(figSep,axsSep,figCom,axsCom,spec,PPcs,PPdq,out_sep2,out_comp2)
 			
 			# Plot 3
-			if (args.steps.lower() in {'all','find','plot','load+','pick+','filter+','find+'}):
+			if (args.steps.lower() in {'all','find','plot','load+','pick+','cluster+','find+'}):
 				plotting.plotNetwork(spec,Xrng,Yrng,PPcs,PPdq,out_nets)
 
 			# Plot 4
-			if (args.steps.lower() in {'all','match','plot','load+','pick+','filter+','find+','match+'}):
-				plotting.plotMatches(spec,args.output,inetaDb,Xrng,Yrng)
+			if (args.steps.lower() in {'all','match','plot','load+','pick+','cluster+','find+','match+'}):
+				plotting.plotMatches(spec,args.outdir,inetaDb,Xrng,Yrng)
 			print("...Done.")
 		
 		else:
 			print("Skipping Plot Generation")
+
+	## Targeted plotting for selected network with selected database entry
+
+	if args.steps.lower() in {'singleplot'}:
+		if (args.net is None or args.dbname is None):
+			parser.error("-s singleplot requires -n Network and -d DatabaseEntry.")
+		with open('ptf_pyINETAObj.pickle', 'rb') as handle:
+				spec = pickle.loads(handle.read())
+		# Plot selected Network with a target metabolite
+		plotting.plotIndividualMatch(spec,inetaDb,args.net,args.dbname,Xrng,Yrng)#"bmse000794")
 
 if __name__ == '__main__':
 
 	parser = argparse.ArgumentParser(description="Script to run the INETA pipeline.")
 	parser.add_argument('-c', '--configfile', required=True,
 		help='Required: A config file with all the options and parameters required for the INETA run.')
-	parser.add_argument('-o', '--output', default=os.getcwd(),
+	parser.add_argument('-o', '--outdir', default=os.getcwd(),
 		help='Optional: Full path to the output folder.(Default: Current folder)')
 	parser.add_argument('-s', '--steps', default="all",
-		help='Optional: Specify which steps you want to run. Can be one of {all,load,pick,filter,find,match,plot,summary,load+,pick+,filter+,find+,match+}. Adding a + to the end of option runs all steps after the specified step.')
+		help='Optional: Specify which steps you want to run. Can be one of {all,load,pick,cluster,find,match,plot,summary,singleplot,load+,pick+,cluster+,find+,match+}. Adding a + to the end of option runs all steps after the specified step.')
+	parser.add_argument('-n', '--net', default=None,
+		help='Required with -s singlePlot: Specify which Network you want to plot.')
+	parser.add_argument('-d', '--dbname', default=None,
+		help='Required with -s singlePlot: Specify which database metabolite you want to plot.')
 	parser.add_argument('-f', '--figure', default="yes",
 		help='Optional: Generate figures- yes or no. Default: Yes')
 	args = parser.parse_args()
