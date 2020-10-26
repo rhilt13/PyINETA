@@ -272,7 +272,7 @@ def plotDb (dbNet,ax,col,pos,name):
 			ax.plot([x1,x2],[y1,y2],color=col, linewidth=2)
 	ax.scatter(X,Y,c=col, s=100)
 	for label, x, y in zip(ID,X,Y):
-		ax.annotate(label, xy=(x, y), xytext=(40, -40),fontsize='25',textcoords='offset points', ha='right', va='bottom',color=col)
+		ax.annotate(label, xy=(x, y), xytext=(20, -20),fontsize='15',textcoords='offset points', ha='right', va='bottom',color=col)
 	ax.text(2,pos*5+5,name_parts[2],fontsize='20',color=col,ha='right')
 	return(ax)
 
@@ -311,14 +311,14 @@ def plotMatches (pyinetaObj,outFolder,db_file,Xlim,Ylim):
 		(figCom,axsCom)=plotSingle(pts,Xlim,Ylim,i[0],netfig,grid=False)
 		axsCom.scatter(i[1],i[2], c='0.45', s=100,marker='o',facecolors='none')
 		for label, x, y in zip(i[3],i[1],i[2]):	
-			axsCom.annotate(label, xy=(x, y), xytext=(-20, 20),fontsize='25',textcoords='offset points', ha='right', va='bottom')
+			axsCom.annotate(label, xy=(x, y), xytext=(-5, 5),fontsize='15',textcoords='offset points', ha='right', va='bottom')
 		for j in i[4]:
 			axsCom.plot([j[0][0], j[1][0]], [j[0][1], j[1][1]], color='0.45', linestyle='--', linewidth=4)
 		if len(i)>5:
 			for j in range(5,len(i)):
 				axsCom=plotDb(i[j][1][0],axsCom,colors(col),pos,i[j][0])
 				for label, x, y in zip(i[3],i[1],i[2]):
-					axsCom.annotate(label, xy=(x, y), xytext=(-20, 20),fontsize='25',textcoords='offset points', ha='right', va='bottom')
+					axsCom.annotate(label, xy=(x, y), xytext=(-5, 5),fontsize='15',textcoords='offset points', ha='right', va='bottom')
 				name=i[j][0]
 				name=name.replace('::','-')
 				name=name.replace('/','-')
@@ -356,37 +356,60 @@ def plotIndividualMatch(pyinetaObj,db_file,netNum,id,Xlim,Ylim):
 	Returns:
 		figure and axes handle for the plot.
 	"""
-
+	# Generate a list of all network names provided
+	if ',' in netNum:
+		netList=netNum.split(',')
+	else:
+		netList=[netNum]
+	netFirst=netList.pop()
+	netfig="temp_"+netNum+"_"+id+".eps"
+	# Plot the first network name match
 	for nets in pyinetaObj.NetMatch:
-		if netNum in nets:
-			col=0
-			pos=0
-			netfig="temp_"+netNum+"_"+id+".eps"
+		if netFirst in nets:
 			pts=list()
 			pts.append(nets[1])
 			pts.append(nets[2])
 			(figCom,axsCom)=plotSingle(pts,Xlim,Ylim,nets[0],netfig,grid=False)
-			axsCom.scatter(nets[1],nets[2], c='0.45', s=100,marker='o',facecolors='none')
+			axsCom.scatter(nets[1],nets[2], c='0.25', s=100,marker='o',facecolors='none')
 			for label, x, y in zip(nets[3],nets[1],nets[2]):	
-				axsCom.annotate(label, xy=(x, y), xytext=(-20, 20),fontsize='25',textcoords='offset points', ha='right', va='bottom')
+				axsCom.annotate(label, xy=(x, y), xytext=(-5, 5),fontsize='15',textcoords='offset points', ha='right', va='bottom')
 			for j in nets[4]:
-				axsCom.plot([j[0][0], j[1][0]], [j[0][1], j[1][1]], color='0.45', linestyle='--', linewidth=4)
-
-			with open(db_file, 'r') as json_file:
-				json_db = json.load(json_file)
-			for i in json_db:
-				if id in i:
-					axsCom=plotDb(json_db[i]['Networks'],axsCom,colors(col),pos,i)
-					pos+=1
-					col+=1
-					if col==10:
-						col=0
-			try:
-				X=pyinetaObj.Xlist[len(pyinetaObj.Xlist)-1]
-				Y=pyinetaObj.Ylist[len(pyinetaObj.Ylist)-1]
-			except AttributeError:
-				X=pyinetaObj[0]
-				Y=pyinetaObj[1]
-			axsCom.plot(X,Y,'k.',markersize=2)
-			figCom.savefig(netfig, dpi=300)
+				axsCom.plot([j[0][0], j[1][0]], [j[0][1], j[1][1]], color='0.25', linestyle='--', linewidth=4)
+	# Plot all other network name matches separated by comma in the -n option
+	for n,netSingle in enumerate(netList):
+		for nets in pyinetaObj.NetMatch:
+			if netSingle in nets:
+				c_num=0.45+(n*0.2)
+				if (c_num>0.9):
+					c_num=0.45
+				print(c_num)
+				axsCom.scatter(nets[1],nets[2], c=str(c_num), s=100,marker='o',facecolors='none')
+				for label, x, y in zip(nets[3],nets[1],nets[2]):	
+					axsCom.annotate(label, xy=(x, y), xytext=(-5, 5),fontsize='15',textcoords='offset points', ha='right', va='bottom')
+				for j in nets[4]:
+					axsCom.plot([j[0][0], j[1][0]], [j[0][1], j[1][1]], color=str(c_num), linestyle='--', linewidth=4)
+	# Add title name with all matched network names
+	axsCom.set_title(netNum, fontsize=25)
+	# Plot all the database network name or id matches
+	col=0
+	pos=0
+	with open(db_file, 'r') as json_file:
+		json_db = json.load(json_file)
+	for i in json_db:
+		if id in i:
+			axsCom=plotDb(json_db[i]['Networks'],axsCom,colors(col),pos,i)
+			pos+=1
+			col+=1
+			if col==10:
+				col=0
+	# Plot all the picked peaks on top of the network and database matches
+	try:
+		X=pyinetaObj.Xlist[len(pyinetaObj.Xlist)-1]
+		Y=pyinetaObj.Ylist[len(pyinetaObj.Ylist)-1]
+	except AttributeError:
+		X=pyinetaObj[0]
+		Y=pyinetaObj[1]
+	axsCom.plot(X,Y,'k.',markersize=2)
+	# Save final figure
+	figCom.savefig(netfig, dpi=300)
 	return(figCom,axsCom)
