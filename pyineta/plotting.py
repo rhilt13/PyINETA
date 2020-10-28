@@ -219,7 +219,7 @@ def colors(n):
 		n (int): Color number.
 
 	Returns:
-		str: Hex code for the specified color.
+		str : Hex code for the specified color.
 	"""
 
 	# Custom colormap for visually distinct colors:
@@ -356,6 +356,7 @@ def plotIndividualMatch(pyinetaObj,db_file,netNum,id,Xlim,Ylim):
 	Returns:
 		figure and axes handle for the plot.
 	"""
+	
 	# Generate a list of all network names provided
 	if ',' in netNum:
 		netList=netNum.split(',')

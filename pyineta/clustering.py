@@ -21,7 +21,7 @@ def gather (Points, thres, ax):
 		ax (int): '0' indicates gathering along the 13C axis while '1' indicates gathering along the DQ axis.
 	
 	Returns:
-		A dict mapping lists of clustered points to their respective cluster numbers.
+		dict : A dict mapping lists of clustered points to their respective cluster numbers.
 	"""
 
 	sets = defaultdict(list)
@@ -49,7 +49,7 @@ def splitY (Points, thres, ax):
 		ax (int): '0' indicates splitting along the 13C axis while '1' indicates splitting along the DQ axis.
 	
 	Returns:
-		A dict mapping lists of clustered points to their reorganized cluster numbers after splitting.
+		dict : A dict mapping lists of clustered points to their reorganized cluster numbers after splitting.
 	"""
 
 	sets = defaultdict(list)

@@ -27,7 +27,7 @@ def findClosestPoints (Pts,Qry):
 		Qry (ndarray): A 1D array with a single point.
 	
 	Returns:
-		A tuple with the distance and index of the closest point in Pts to Qry.
+		tuple : A tuple with the distance and index of the closest point in Pts to Qry.
 	"""
 
 	PtsList = spatial.KDTree(Pts)
@@ -77,7 +77,7 @@ def horzAlign (P,threshold1,threshold2,threshold3):
 		threshold3 (float): Threshold to check of the 2 points are equidistant from the diagonal.
 
 	Returns:
-		A dict mapping horizontally aligned peaks to their indices.
+		dict : A dict mapping horizontally aligned peaks to their indices.
 	"""
 
 	ct=0

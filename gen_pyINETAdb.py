@@ -1,5 +1,14 @@
 #!/usr/bin/env python
 
+"""Script to generate a custom pyINETA database.
+
+This script can be used to recreate the pyINETA database from the BMRB star files.
+It can also be used to generate a custom database by providing your own list of 
+chemical shift values and assignments.
+
+Use gen_pyINETAdb.py -h for options.
+
+"""
 import os
 import re
 import sys

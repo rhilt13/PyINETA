@@ -86,17 +86,17 @@ def matchDatabase (json_db,Pval,tag,unknown_conn,amb_tol,near_tol,match_tol,top_
 		Pval (list): List of all points in a single network.
 		tag (list): List of tags for the unknown peaks.
 		unknown_conn (list): List of unknown connections.
-		amb_tol ([type]): Amibiguity tolerance (Removes all database entries with ambiguity higher than this tolerance).
-		near_tol ([type]): Tolerance for distance in the 13C dimension between unknown peak and a match database peak.
-		match_tol ([type]): Tolerance for number of matches in a single network.
-		top_tol ([type]): Topology tolerance (How far the point can be in all directions from the match peak point).
-		hit_tol ([type]): Hit score threshold.
-		cov_tol ([type]): Coverage score threshold.
+		amb_tol (float): Amibiguity tolerance (Removes all database entries with ambiguity higher than this tolerance).
+		near_tol (float): Tolerance for distance in the 13C dimension between unknown peak and a match database peak.
+		match_tol (int): Tolerance for number of matches in a single network.
+		top_tol (float): Topology tolerance (How far the point can be in all directions from the match peak point).
+		hit_tol (float): Hit score threshold.
+		cov_tol (float): Coverage score threshold.
 		NetNum (int): Network number.
 		Pts (list): List of pairs of horizontally connected peaks.
 
 	Returns:
-		A list of networks with their corresponding hits and hit details.
+		list : A list of networks with their corresponding hits and hit details.
 	"""
 
 	X = [float(i[0]) for i in Pval]

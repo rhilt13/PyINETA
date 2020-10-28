@@ -1,17 +1,12 @@
 #!/usr/bin/python
 
-# Setup a download object
-# If its there okay, otherwise download it
-# If the downloaded file is more than 1 month old, re download it.
-# Compress and make it available in place But uncompress it to run.
+""" This is the main script for running the PyINETA pipeline.
 
-#import all dependencies
+This script provides options to run all or components of the PyINETA pipeline.
+This script can be used in its entirety.
+Or portions can be used to combine wiht other custom scripts to utilize the different components.
 
-# create output folder
-
-# check if config file exists and is properly formatted
-
-#Open spectra and run pickPeak
+"""
 
 import argparse
 import os
@@ -34,6 +29,7 @@ def main(args):
 	print("..Done.")
 		
 	## Read the NMR Ft or data matrix file
+
 	if args.steps.lower() in {'all','load','load+'}:
 		print("Step0.2==> Loading NMR file...", end=' ')
 		try:
@@ -81,7 +77,6 @@ def main(args):
 			spec.pickPeak(PPmin,PPmax,steps,padUnits)
 		except AttributeError as atte:
 			pyineta.stepError(atte)
-		# print(spec.Pts)
 		pickle.dump(spec, open('ptf_pyINETAObj.pickle', 'wb'))
 		print("..Done.")
 
@@ -165,7 +160,7 @@ def main(args):
 		summary_file=param['Summary_file']
 		spec.summarize(args.outdir,summary_file)
 	
-	## Plotting for all
+	## Plotting for all steps
 
 	if args.steps.lower() in {'plot'}:
 		with open('ptf_pyINETAObj.pickle', 'rb') as handle:

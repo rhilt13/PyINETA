@@ -1,3 +1,19 @@
+"""The core classes and functions for pyINETA
+
+This file includes the core Pyineta class and function definitions.
+Includes the following:
+	* Pyineta class - The core Pyineta class.
+		> pickPeak - Peak picking the input spectra.
+		> clusterPoints - Clustering a list of closely located points.
+		> findNetwork - Find INETA networks in the Pyineta object spectrum.
+		> writeNetwork - Write the found networks along with their points to a file.
+		> matchDb - Match the found INETA networks to the database entries.
+		> writeMatches - Write the matches report to a tab-delimited file.
+		> summarize - Write a summary file with the main reports for the entire INETA run.
+	* readConfig - Read the parameters and options from the config file.
+	* stepError - Report error message.
+"""
+
 import sys
 sys.dont_write_bytecode = True
 import numpy as np
@@ -9,22 +25,53 @@ import pyineta.clustering as clustering
 import pyineta.finding as finding
 import pyineta.matching as matching
 
-# Read in the config file and store the parameters
-
-# Step 5: Finalize plotting
-
 class Pyineta:
-	
-	# Read the file into : 
-	#	- the intensity matrix, 
-	#	- 13C ppm vector and 
-	#	- double quantum ppm vector
+	"""The core Pyineta class.
+
+	Attributes:
+		In (ndarray): A numpy array with the intensities.
+		Cppm (1D-array): A 1D array with the 13C ppm values.
+		DQppm (1D-array): A 1D array with the double quantum ppm values. 
+		Pts (dict): A dict mapping an array of points (x,y) to the iteration number it was found in.
+        Xlist (dict) : A dict mapping an array of x axis values (13C ppm values) to the iteration number it was found in.
+        Ylist (dict) : A dict mapping an array of y axis values (DQ ppm values) to the iteration number it was found in.
+		clusteredPts (ndarray) : An array of center of masses (peak centers) for all the clusters.
+		mergedPts (ndarray) : A 2D array of merged points.
+		horzPts (dict): A dict mapping horizontally aligned peaks to their indices.
+		vertPts (dict): A dict mapping lists of clustered points to their respective cluster numbers.
+		Networks (list) : list of lists with points belonging to a network.
+		Pairs (list) : A list of all horizontally connected pairs of points included in a network.
+		NetTag (list) : List of Tags for naming the unknown peaks in a network.
+		NetMatch (list): A list of networks with their corresponding hits and hit details.
+
+	"""
 
 	def __init__(self, spectrum):	# Read the ft file using nmrglue
+		"""The __init__ method.
+
+		Initialize the Pyineta object.
+
+		Args:
+			spectrum (str): input ft filename with the pre-processed NMR spectra.
+		"""
+
 		(self.In,self.Cppm,self.DQppm)=picking.readFt(spectrum)
 
 	@classmethod
 	def readMat (cls, spectrum, xmat, ymat):	# Read in numpy arrays
+		"""Read the spectra from matrices instead of an ft file.
+
+		This method allows defining the Pyineta class using 3 separate matrices.
+
+		Args:
+			spectrum (ndarray): A numpy array with the intensities.
+			xmat (1D-array): A 1D array with the 13C ppm values.
+			ymat (1D-array): A 1D array with the double quantum ppm values.
+
+		Returns:
+			pyineta object : The pyineta object with the spectra.
+		"""
+
 		In=spectrum
 		Cppm=xmat
 		DQppm=ymat
@@ -33,6 +80,15 @@ class Pyineta:
 	# Step 1: Peak Picking
 	
 	def pickPeak (self,PPmin,PPmax,steps,shift=None):
+		"""Peak picking the input spectra.
+
+		Args:
+			PPmin (float): Minimum intensity value to be considered a peak.
+        	PPmax (float): Maximum intensity value to be considered a peak.
+			steps (int): Number of iterations to find peaks within the PPmin to PPmax range.
+			shift (list, optional): A list with 4 values: units to shift, length of 13C and DQ axes and the direction to shift. Defaults to None.
+		"""
+
 		if shift is not None:
 			if type(shift) is list and len(shift)==4:
 				if (shift[3] == 'pos'):
@@ -49,6 +105,13 @@ class Pyineta:
 	# Step 2: Cluster points
 
 	def clusterPoints (self,PPcs,PPdq):
+		"""Clustering a list of closely located points.
+
+		Args:
+			PPcs (float): Points found within this threshold along the 13C axis are grouped into a single cluster.
+			PPdq (float): A distance threshold for splitting points into a different cluster along the DQ axis.
+		"""
+
 		self.clusteredPts={}
 		for k, P in list(self.Pts.items()):
 			sortedP=clustering.gather(P,float(PPcs),0)
@@ -58,20 +121,24 @@ class Pyineta:
 	# Step 3: Find Networks
 
 	def findNetwork (self,levdist,dqt,sumXY,sdt,cst,sel='all'):
-		
+		"""Find INETA networks in the Pyineta object spectrum.
+
+		Args:
+			levdist (float): Threshold for merging cluster centers from different iterations into a single point.
+			dqt (float): Threshold to split the merged points along the DQ axis.
+			sumXY (float): Threshold to check if the sum of 13C ppm values for two points equals their DQ ppm or not.
+			sdt (float): Threshold to check of the 2 points are equidistant from the diagonal.
+			cst (float): Points found within this threshold are grouped into a single cluster.
+			sel (str, optional): 'all' or 'last'. Defaults to 'all'.
+		"""
+
 		## Find horizontally aligned peaks
-		# self.horzPts={}
-		# print(self.clusteredPts)
 		if sel=="all":
-			# for level,points in self.clusteredPts.items():
-			# 	alignedPts[level]=finding.horzAlign(points,dqt,sumXY,sdt)
-			# self.mergedPts=finding.mergeLevels(alignedPts,levdist)
 			self.mergedPts=finding.mergeLevels(self.clusteredPts,levdist)
 		elif sel=="last":
 			self.mergedPts=self.clusteredPts[len(self.clusteredPts)-1]
 		else:
 			exit("ERROR: Unknown value for sel. Use either all or last.")
-		# print(self.mergedPts)
 		(self.horzPts)=finding.horzAlign(self.mergedPts,dqt,sumXY,sdt)
 		
 		## Find vertically aligned peaks from the set of horizontally aligned peaks
@@ -82,13 +149,16 @@ class Pyineta:
 		## Build network from aligned peaks
 		self.Networks=finding.buildNetwork(self.horzPts,self.vertPts)
 		print("Step3.2==> Built ",len(self.Networks)," networks.")
-		# print("BLABLABLA=+++",len(self.Networks))
-		# print(Netfull)
-		# print(self.Networks)
+
 		## Generate a list of all connected pairs of peaks.
 		self.Pairs=finding.listPairs(self.horzPts,self.vertPts)
 
 	def writeNetwork (self,net_file):
+		""" Write the found networks along with their points to a file.
+
+		Args:
+			net_file (str): Network output filename.
+		"""
 
 		out_file = open(net_file, 'w')
 		j=1
@@ -107,7 +177,20 @@ class Pyineta:
 			out_file.write(outstr)
 
 	# Step 4: Match Database
+
 	def matchDb (self,inetaDb,ambig,near,match,topo,hitSc,covSc):
+		""" Match the found INETA networks to the database entries.
+
+		Args:
+			inetaDb (dict): The INETA database in json format.
+			ambig (float): Amibiguity tolerance (Removes all database entries with ambiguity higher than this tolerance).
+			near (float): Tolerance for distance in the 13C dimension between unknown peak and a match database peak.
+			match (int): Tolerance for number of matches in a single network.
+			topo (float): Topology tolerance (How far the point can be in all directions from the match peak point).
+			hitSc (float): Hit score threshold.
+			covSc (float): Coverage score threshold.
+		"""
+
 		import json
 
 		self.NetTag=[]
@@ -122,7 +205,6 @@ class Pyineta:
 			out=matching.matchDatabase(json_data,Pvals,Ptags,unknownConn,ambig,near,match,topo,hitSc,covSc,q,FinalPairs)
 			self.NetMatch.append(out)
 			self.NetTag.append(Ptags)
-			# print(out)
 			if (len(out)>5):
 				ct_match+=1
 				print("Step4.1==> Match found for Network",q)
@@ -131,6 +213,13 @@ class Pyineta:
 		print("Matches found for ", ct_match, "Networks out of ",len(self.Networks))
 
 	def writeMatches (self,outFolder,match_file):
+		"""Write the matches report to a tab-delimited file.
+
+		Args:
+			outFolder (str): Path to the output folder.
+			match_file (str): Output filename to write the matches.
+		"""
+
 		out_file = open(outFolder+"/"+match_file, 'w')
 		header="#NetworkNum\tID\tMatchName\tSolvent\tAmbiguityScore\tHitscore\tCoverageScore\tMatchedConnections\tUnmatchedConnections\n"
 		out_file.write(header)
@@ -151,6 +240,13 @@ class Pyineta:
 			out_file.write(outstr)
 
 	def summarize (self,outFolder,filename):
+		"""Write a summary file with the main reports for the entire INETA run.
+
+		Args:
+			outFolder (str): Path to the output folder.
+			filename (str): Output filename to write the report.
+		"""
+
 		out_file = open(outFolder+"/"+filename, 'w')
 		now = datetime.now() # datetime object containing current date and time
 		outstr="Summary for PyINETA run on "+str(now)+" :\n"
@@ -187,6 +283,15 @@ class Pyineta:
 			pass
 
 def readConfig (configFile):
+	"""Read the parameters and options from the config file.
+
+	Args:
+		configFile (str): The config filename. 
+
+	Returns:
+		dict : A dict mapping the parameters to their values.
+	"""
+
 	import configparser
 	config = configparser.ConfigParser()
 	config.read("config.ini")
@@ -244,6 +349,12 @@ def readConfig (configFile):
 	return(param)
 
 def stepError (errmsg):
+	"""Report error message.
+
+	Args:
+		errmsg (str): Error message reported by python interpreter.
+	"""
+
 	print("ERROR:  %s" %(errmsg))
 	print("\tCound not find all required attributes in saved pickle file.")
 	print("\tMake sure you've run all previous steps.")

@@ -19,8 +19,8 @@ def readFt (ftfile):
 
     Returns:
         ndarray : A numpy array with the intensities.
-        ndarray : A 1D array with the 13C ppm values.
-        ndarray : A 1D array with the double quantum ppm values.
+        1D-array : A 1D array with the 13C ppm values.
+        1D-array : A 1D array with the double quantum ppm values.
     """
 
     ft_dic,ft_data = ng.pipe.read(ftfile)
