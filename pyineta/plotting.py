@@ -1,7 +1,8 @@
 """Functions for plotting INETA results
 
-This file includes all the plotting functions used by INETA.
+This includes all the plotting functions used by INETA.
 Includes the following funcitons:
+	* plot1D - 
 	* plotSingle - Generate a single plot for a given spectrum.
 	* plotFigSep - Generate image with spectra for each saved iteration in a separate panel.
 	* plotClusteredPoints - Plot the clustered points and theirr centers in the spectra.
@@ -18,10 +19,105 @@ import os
 import json
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MultipleLocator
 from shutil import copyfile
 from itertools import combinations
 from matplotlib.axes._axes import _log as matplotlib_axes_logger
 matplotlib_axes_logger.setLevel('ERROR')
+
+def plot1D (Intsy,ppm,range,ax=None,title=None,net=None):
+	sc=30
+	ax = ax or plt.gca()
+	ax.plot(ppm,Intsy,'k-')
+	ax.tick_params(axis='x', which='major', length=5, labelsize=(sc*0.8))
+	ax.xaxis.set_minor_locator(MultipleLocator(5))
+	ax.tick_params(which='minor', length=2)
+	if title is not None:
+		ax.set_title(title)
+	ax.set_xlabel("13C ppm")
+	i=0
+	for key,vals in range.items():
+		j=0
+		patch=list()
+		for r in vals:
+			if net is None:
+				if (j==0):
+					ax.axvspan(r[0], r[1], facecolor=colors(i), alpha=0.25, label=key)
+				else:
+					ax.axvspan(r[0], r[1], facecolor=colors(i), alpha=0.25)
+				j+=1
+			else:
+				# If specific network is provided
+				Netlist=net.lower().split(",")
+				if key.lower() in Netlist:
+					if (j==0):
+						ax.axvspan(r[0], r[1], facecolor=colors(i), alpha=0.25, label=key)
+					else:
+						ax.axvspan(r[0], r[1], facecolor=colors(i), alpha=0.25)
+					j+=1
+		i+=1
+		if i==10:
+			i=0
+	return(ax)
+
+def plotNetWith1D (pyinetaObj):
+	try:
+		X=pyinetaObj.Xlist[len(pyinetaObj.Xlist)-1]
+		Y=pyinetaObj.Ylist[len(pyinetaObj.Ylist)-1]
+	except AttributeError:
+		X=pyinetaObj[0]
+		Y=pyinetaObj[1]
+	x, y = np.random.randn(2, 100)
+	fig, [ax1, ax2] = plt.subplots(2, 1, sharex=True)
+	ax1.xcorr(x, y, usevlines=True, maxlags=50, normed=True, lw=2)
+	ax1.grid(True)
+
+	ax2.acorr(x, usevlines=True, normed=True, maxlags=50, lw=2)
+	ax2.grid(True)
+
+	plt.show()
+
+def plotJres (In,Xs,Ys,ax=None):
+	sc=30
+	ax = ax or plt.gca()
+
+	ax.plot(X,Y,'k.',markersize=2)
+	# ax.xaxis.grid(True, which='minor')
+	ax.tick_params(axis='x', which='major', length=5, labelsize=(sc*0.8))
+	ax.xaxis.set_minor_locator(MultipleLocator(5))
+	ax.tick_params(which='minor', length=2)
+	# ax.set_xlim(Xlim)
+	# ax.set_yticklabels([])
+	if title is not None:
+		ax.set_title(title)
+	ax.set_xlabel("13C ppm")
+	# ax.set_xlim(200, 0)
+	# ax.set_ylim(-80000, 2500000)
+	i=0
+	for key,vals in range.items():
+		j=0
+		patch=list()
+		for r in vals:
+			if net is None:
+				if (j==0):
+					ax.axvspan(r[0], r[1], facecolor=colors(i), alpha=0.25, label=key)
+				else:
+					ax.axvspan(r[0], r[1], facecolor=colors(i), alpha=0.25)
+				j+=1
+			else:
+				# If specific network is provided
+				Netlist=net.lower().split(",")
+				if key.lower() in Netlist:
+					if (j==0):
+						ax.axvspan(r[0], r[1], facecolor=colors(i), alpha=0.25, label=key)
+					else:
+						ax.axvspan(r[0], r[1], facecolor=colors(i), alpha=0.25)
+					j+=1
+		i+=1
+		if i==10:
+			i=0
+	return(ax)
+
 
 def plotSingle (pyinetaObj,Xlim,Ylim,label,imgname=None,grid=False):
 	"""Generate a single plot for a given spectrum.
@@ -185,6 +281,9 @@ def plotNetwork (pyinetaObj,Xlim,Ylim,PPcs,PPdq,out_nets=None):
 		PPcs (float): ppm threshold to cluster points along the 13C axis.
 		PPdq (float): ppm threshold to cluster points along the DQ axis.
 		out_nets (str, optional): Filename to save the plot. Defaults to None.
+	
+	Returns:
+		axes handle for the resulting figure
 	"""
 
 	(figFin,axsFin)=plotSingle(pyinetaObj,Xlim,Ylim,'Complete plot',grid=False)
@@ -211,6 +310,7 @@ def plotNetwork (pyinetaObj,Xlim,Ylim,PPcs,PPdq,out_nets=None):
 	axsFin=plotAllNet(pyinetaObj.horzPts,pyinetaObj.vertPts,axsFin,max(PPcs,PPdq))
 	if out_nets is not None:
 		figFin.savefig(out_nets,format='eps',dpi=300)
+	return(figFin,axsFin)
 
 def colors(n):
 	"""Get a specific color from a list of custom colormap.
@@ -330,6 +430,7 @@ def plotMatches (pyinetaObj,outFolder,db_file,Xlim,Ylim):
 				col+=1
 				if col==10:
 					col=0
+
 		try:
 			X=pyinetaObj.Xlist[len(pyinetaObj.Xlist)-1]
 			Y=pyinetaObj.Ylist[len(pyinetaObj.Ylist)-1]
@@ -356,7 +457,7 @@ def plotIndividualMatch(pyinetaObj,db_file,netNum,id,Xlim,Ylim):
 	Returns:
 		figure and axes handle for the plot.
 	"""
-	
+
 	# Generate a list of all network names provided
 	if ',' in netNum:
 		netList=netNum.split(',')
