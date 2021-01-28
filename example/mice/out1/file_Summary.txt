@@ -1,0 +1,6 @@
+Summary for PyINETA run on 2020-12-03 20:02:11.773650 :
+# of picked peaks in all steps: 2410
+# of peaks after clustering: 384
+# of peaks retained after merging steps: 146
+# of networks found: 16
+# of matches found: 16

@@ -1,0 +1,16 @@
+Network1	./m1_brain.ft=CX1[Present](61.51,130.09):32165.295;CX2[Present](68.42,90.28):115496.31;CX3[Present](21.87,90.26):30175.102;	./m3_rest_brain.ft=CX1[Absent](61.51,130.09):-232076.58;CX2[Present](68.42,90.28):136912.08;CX3[Present](21.87,90.26):4195032.5;
+Network2	./m1_brain.ft=CX1[Present](70.7,93.39):12523.685;CX2[Absent](183.85,255.0):7418.284;CX3[Present](22.56,93.21):34290.234;	./m3_rest_brain.ft=CX1[Present](70.7,93.39):628394.2;CX2[Present](183.85,255.0):20519.094;CX3[Present](22.56,93.21):293625.2;
+Network3	./m1_brain.ft=CX1[Absent](175.02,199.32):-259.4297;CX2[Absent](24.71,199.56):-7547.9517;	./m3_rest_brain.ft=CX1[Present](175.02,199.32):967029.94;CX2[Present](24.71,199.56):372959.9;
+Network4	./m1_brain.ft=CX1[Present](25.96,67.85):114896.33;CX2[Present](41.64,67.86):22422.578;	./m3_rest_brain.ft=CX1[Present](25.96,67.85):1113221.2;CX2[Present](41.64,67.86):1115246.0;
+Network5	./m1_brain.ft=CX1[Present](29.21,86.25):42361.742;CX2[Absent](57.19,86.47):-1200.8555;	./m3_rest_brain.ft=CX1[Present](29.21,86.25):526481.25;CX2[Present](57.19,86.47):448131.44;
+Network6	./m1_brain.ft=CX1[Absent](179.45,212.98):9649.631;CX2[Absent](33.19,212.99):1444.1577;	./m3_rest_brain.ft=CX1[Present](179.45,212.98):61527.25;CX2[Absent](33.19,212.99):-182028.44;
+Network7	./m1_brain.ft=CX1[Absent](182.99,219.63):-290.36084;CX2[Present](36.94,220.07):18163.227;	./m3_rest_brain.ft=CX1[Absent](182.99,219.63):-139516.64;CX2[Present](36.94,220.07):760887.9;
+Network8	./m1_brain.ft=CX1[Absent](50.08,88.27):-8602.15;CX2[Present](37.89,88.34):10599.242;	./m3_rest_brain.ft=CX1[Present](50.08,88.27):6605607.0;CX2[Present](37.89,88.34):959977.5;
+Network9	./m1_brain.ft=CX1[Present](42.44,223.22):13693.286;CX2[Present](180.91,223.32):18516.41;	./m3_rest_brain.ft=CX1[Present](42.44,223.22):317541.88;CX2[Present](180.91,223.32):2590118.8;
+Network10	./m1_brain.ft=CX1[Absent](62.29,105.73):2455.521;CX2[Absent](43.07,105.77):-2332.2095;	./m3_rest_brain.ft=CX1[Present](62.29,105.73):267664.12;CX2[Present](43.07,105.77):366191.03;
+Network11	./m1_brain.ft=CX1[Present](174.03,217.94):48844.047;CX2[Present](43.57,217.94):49839.355;	./m3_rest_brain.ft=CX1[Present](174.03,217.94):828704.3;CX2[Present](43.57,217.94):159513.38;
+Network12	./m1_brain.ft=CX1[Absent](45.67,223.71):-4747.462;CX2[Absent](177.81,223.7):-5176.481;	./m3_rest_brain.ft=CX1[Absent](45.67,223.71):-417408.44;CX2[Present](177.81,223.7):61823.75;
+Network13	./m1_brain.ft=CX1[Absent](55.37,236.24):1558.1455;CX2[Absent](180.54,236.22):8444.742;	./m3_rest_brain.ft=CX1[Present](55.37,236.24):4938965.0;CX2[Present](180.54,236.22):178654.38;
+Network14	./m1_brain.ft=CX1[Absent](176.01,232.31):8650.381;CX2[Absent](56.31,232.7):917.82764;	./m3_rest_brain.ft=CX1[Present](176.01,232.31):136706.86;CX2[Present](56.31,232.7):1624772.8;
+Network15	./m1_brain.ft=CX1[Present](176.25,233.43):39045.72;CX2[Absent](57.29,233.81):-13603.933;	./m3_rest_brain.ft=CX1[Present](176.25,233.43):15262.07;CX2[Present](57.29,233.81):533090.75;
+Network16	./m1_brain.ft=CX1[Absent](174.79,237.67):9473.409;CX2[Absent](62.81,237.8):5151.675;	./m3_rest_brain.ft=CX1[Present](174.79,237.67):5163123.0;CX2[Present](62.81,237.8):27527.445;
