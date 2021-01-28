@@ -4,7 +4,7 @@
 
 This script provides options to run all or components of the PyINETA pipeline.
 This script can be used in its entirety.
-Or portions can be used to combine wiht other custom scripts to utilize the different components.
+Or portions can be used to combine with other custom scripts to utilize the different components.
 
 """
 
@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 import pyineta.pyineta as pyineta
 import pyineta.plotting as plotting
 import pyineta.picking as picking
+import pyineta.overlays as overlays
 
 
 def main(args):
@@ -100,6 +101,10 @@ def main(args):
 		pickle.dump(spec, open('ptf_pyINETAObj.pickle', 'wb'))
 		print("..Done.")
 
+	## Create output folder if does not exists
+	if not os.path.exists(args.outdir):
+		os.makedirs(args.outdir)
+
 	## Step 3: Find Networks
 	
 	if args.steps.lower() in {'all','find','load+','pick+','cluster+','find+'}:
@@ -120,7 +125,7 @@ def main(args):
 			pyineta.stepError(atte)
 		#
 		net_file=param['Network_output_file']
-		spec.writeNetwork(net_file)
+		spec.writeNetwork(args.outdir,net_file)
 		pickle.dump(spec, open('ptf_pyINETAObj.pickle', 'wb'))
 		print("...Done.")
 
@@ -160,6 +165,43 @@ def main(args):
 		summary_file=param['Summary_file']
 		spec.summarize(args.outdir,summary_file)
 	
+	## Overlay 1D 13C specctra on the INADEQUATE spectra
+	
+	if args.steps.lower() in {'overlay1d'}:
+		
+		with open('ptf_pyINETAObj.pickle', 'rb') as handle:
+				spec = pickle.loads(handle.read())
+		
+		files1D=param['Files1D']
+		peakWidth1D=param['PeakWidth1D']
+		intThres=param['Intensity_threshold']
+		Match1D_outfile=param['Match1d_output_file']
+		out_file51=args.outdir+"/"+Match1D_outfile
+		out_1dallImg=param['OutImage_Match1d']
+		out_img51=args.outdir+"/"+out_1dallImg
+
+		# (fig,curraxs)=plotting.plotNetwork(spec,Xrng,Yrng,PPcs,PPdq,out_file3)
+		overlays.overlay1D(spec,files1D,PPcs,peakWidth1D,intThres,out_file51,out_img51,net=args.net)
+
+	## Overlay 1D 13C specctra on the INADEQUATE spectra
+	
+	if args.steps.lower() in {'overlayjres'}:
+		
+		with open('ptf_pyINETAObj.pickle', 'rb') as handle:
+				spec = pickle.loads(handle.read())
+		
+		filesJres=param['FilesJres']
+		# peakWidth1D=param['PeakWidth1D']
+		# intThres=param['Intensity_threshold']
+		# Match1D_outfile=param['Match1d_output_file']
+		# out_file51=args.outdir+"/"+Match1D_outfile
+		# out_1dallImg=param['OutImage_Match1d']
+		# out_img51=args.outdir+"/"+out_1dallImg
+
+		# (fig,curraxs)=plotting.plotNetwork(spec,Xrng,Yrng,PPcs,PPdq,out_file3)
+		# overlays.overlay1D(spec,files1D,PPcs,peakWidth1D,intThres,out_file51,out_img51,net=args.net)
+		overlays.overlayJres(spec,filesJres)
+
 	## Plotting for all steps
 
 	if args.steps.lower() in {'plot'}:
@@ -185,18 +227,23 @@ def main(args):
 					# print(i,PPmax,PPmin)
 					label.append(i)
 				if (len(spec.Xlist)>1):
-					(figSep, axsSep)=plotting.plotFigSep(spec,Xrng,Yrng,label,out_sep) # Separate
+					out_file11 = args.outdir+"/"+out_sep
+					(figSep, axsSep)=plotting.plotFigSep(spec,Xrng,Yrng,label,out_file11) # Separate
 					if (axsSep.ndim<2):
 						axsSep = np.reshape(axsSep, (-1, 2))
-				(figCom,axsCom)=plotting.plotSingle(spec,Xrng,Yrng,'Complete plot',out_comp) # Complete
+				out_file12 = args.outdir+"/"+out_comp
+				(figCom,axsCom)=plotting.plotSingle(spec,Xrng,Yrng,'Complete plot',out_file12) # Complete
 
 			# Plot 2
 			if (args.steps.lower() in {'all','cluster','plot','load+','pick+','cluster+'}):
-				plotting.plotClusteredPoints(figSep,axsSep,figCom,axsCom,spec,PPcs,PPdq,out_sep2,out_comp2)
+				out_file21 = args.outdir+"/"+out_sep2
+				out_file22 = args.outdir+"/"+out_comp2
+				plotting.plotClusteredPoints(figSep,axsSep,figCom,axsCom,spec,PPcs,PPdq,out_file21,out_file22)
 			
 			# Plot 3
 			if (args.steps.lower() in {'all','find','plot','load+','pick+','cluster+','find+'}):
-				plotting.plotNetwork(spec,Xrng,Yrng,PPcs,PPdq,out_nets)
+				out_file3 = args.outdir+"/"+out_nets
+				plotting.plotNetwork(spec,Xrng,Yrng,PPcs,PPdq,out_file3)
 
 			# Plot 4
 			if (args.steps.lower() in {'all','match','plot','load+','pick+','cluster+','find+','match+'}):
