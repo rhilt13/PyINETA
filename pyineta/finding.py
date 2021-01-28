@@ -1,6 +1,6 @@
 """Functions for finding INETA networks.
 
-This file contains functions used by PyINETA to construct networks in the processed spectra.
+This contains functions used by PyINETA to construct networks in the processed spectra.
 Includes the following functions:
 	* findClosestPoints - Uses KDTree to find close points.
 	* mergeLevels - Merge points found in different iterations of peak picking.

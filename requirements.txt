@@ -12,3 +12,4 @@ sys
 string
 pickle
 datetime
+pynmrstar

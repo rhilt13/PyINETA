@@ -1,6 +1,6 @@
 """Functions for matching INETA networks to the database.
 
-This file includes all the functions used by PyINETA to match the identified networks in the query spectrum to the INADEQUATE spectra of known metabolites in the INETA database.
+This includes all the functions used by PyINETA to match the identified networks in the query spectrum to the INADEQUATE spectra of known metabolites in the INETA database.
 Includes the following functions:
 	* prepUnknowns - Add tags and connection names to the unknown networks.
 	* matchTag - Match the tags from matched peaks to the list of unknown connections.

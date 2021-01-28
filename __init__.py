@@ -4,10 +4,10 @@
 """
 import sys
 
-__release__ = '200723'
+__release__ = '201028'
 __version__ = '2.0'
 
-sys.stderr.write("""Helper Bunny pre-Alpha [ Release %s ]
+sys.stderr.write("""PyINETA [ Release %s ]
 import sys 
 sys.dont_write_bytecode = True
 import numpy as np

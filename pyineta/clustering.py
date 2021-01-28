@@ -1,6 +1,6 @@
 """Functions for clustering and centering a list of peaks.
 
-This file includes all the functions used by PyINETA to cluster the list of peaks in a spectra to find a peak center.
+This includes all the functions used by PyINETA to cluster the list of peaks in a spectra to find a peak center.
 Includes the following functions:
 	* gather - Gather points along a given axis.
 	* splitY - Split groups of points based on threshold.

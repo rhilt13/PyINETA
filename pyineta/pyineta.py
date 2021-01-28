@@ -1,15 +1,14 @@
 """The core classes and functions for pyINETA
 
-This file includes the core Pyineta class and function definitions.
-Includes the following:
+This includes the core Pyineta class and function definitions.
 	* Pyineta class - The core Pyineta class.
-		> pickPeak - Peak picking the input spectra.
-		> clusterPoints - Clustering a list of closely located points.
-		> findNetwork - Find INETA networks in the Pyineta object spectrum.
-		> writeNetwork - Write the found networks along with their points to a file.
-		> matchDb - Match the found INETA networks to the database entries.
-		> writeMatches - Write the matches report to a tab-delimited file.
-		> summarize - Write a summary file with the main reports for the entire INETA run.
+		* pickPeak - Peak picking the input spectra.
+		* clusterPoints - Clustering a list of closely located points.
+		* findNetwork - Find INETA networks in the Pyineta object spectrum.
+		* writeNetwork - Write the found networks along with their points to a file.
+		* matchDb - Match the found INETA networks to the database entries.
+		* writeMatches - Write the matches report to a tab-delimited file.
+		* summarize - Write a summary file with the main reports for the entire INETA run.
 	* readConfig - Read the parameters and options from the config file.
 	* stepError - Report error message.
 """
@@ -28,20 +27,22 @@ import pyineta.matching as matching
 class Pyineta:
 	"""The core Pyineta class.
 
+	This includes the following attributes:
+
 	Attributes:
 		In (ndarray): A numpy array with the intensities.
 		Cppm (1D-array): A 1D array with the 13C ppm values.
 		DQppm (1D-array): A 1D array with the double quantum ppm values. 
 		Pts (dict): A dict mapping an array of points (x,y) to the iteration number it was found in.
-        Xlist (dict) : A dict mapping an array of x axis values (13C ppm values) to the iteration number it was found in.
-        Ylist (dict) : A dict mapping an array of y axis values (DQ ppm values) to the iteration number it was found in.
-		clusteredPts (ndarray) : An array of center of masses (peak centers) for all the clusters.
-		mergedPts (ndarray) : A 2D array of merged points.
+		Xlist (dict): A dict mapping an array of x axis values (13C ppm values) to the iteration number it was found in.
+		Ylist (dict): A dict mapping an array of y axis values (DQ ppm values) to the iteration number it was found in.
+		clusteredPts (ndarray): An array of center of masses (peak centers) for all the clusters.
+		mergedPts (ndarray): A 2D array of merged points.
 		horzPts (dict): A dict mapping horizontally aligned peaks to their indices.
 		vertPts (dict): A dict mapping lists of clustered points to their respective cluster numbers.
-		Networks (list) : list of lists with points belonging to a network.
-		Pairs (list) : A list of all horizontally connected pairs of points included in a network.
-		NetTag (list) : List of Tags for naming the unknown peaks in a network.
+		Networks (list): list of lists with points belonging to a network.
+		Pairs (list): A list of all horizontally connected pairs of points included in a network.
+		NetTag (list): List of Tags for naming the unknown peaks in a network.
 		NetMatch (list): A list of networks with their corresponding hits and hit details.
 
 	"""
@@ -84,7 +85,7 @@ class Pyineta:
 
 		Args:
 			PPmin (float): Minimum intensity value to be considered a peak.
-        	PPmax (float): Maximum intensity value to be considered a peak.
+			PPmax (float): Maximum intensity value to be considered a peak.
 			steps (int): Number of iterations to find peaks within the PPmin to PPmax range.
 			shift (list, optional): A list with 4 values: units to shift, length of 13C and DQ axes and the direction to shift. Defaults to None.
 		"""
@@ -153,14 +154,13 @@ class Pyineta:
 		## Generate a list of all connected pairs of peaks.
 		self.Pairs=finding.listPairs(self.horzPts,self.vertPts)
 
-	def writeNetwork (self,net_file):
+	def writeNetwork (self,outFolder,net_file):
 		""" Write the found networks along with their points to a file.
 
 		Args:
 			net_file (str): Network output filename.
 		"""
-
-		out_file = open(net_file, 'w')
+		out_file = open(outFolder+"/"+net_file, 'w')
 		j=1
 		for i in self.Networks:
 			arr=np.around(np.asarray(i),decimals=2)
@@ -339,6 +339,15 @@ def readConfig (configFile):
 		param["Coverage_Score_threshold"]= config.getfloat("MatchDatabase", "Coverage_Score_threshold")
 		param["Matches_list_output_file"]= config.get("MatchDatabase", "Matches_list_output_file")
 		param["Summary_file"]= config.get("MatchDatabase", "Summary_file")
+
+		param["Files1D"]= config.get("Overlay1D","1D_File_List")
+		param["PeakWidth1D"]= config.getfloat("Overlay1D","Peak_Width_1D")
+		param["Intensity_threshold"]= config.getfloat("Overlay1D","Intensity_threshold")
+		param["Match1d_output_file"]= config.get("Overlay1D","Match1d_output_file")
+		param["OutImage_Match1d"]= config.get("Overlay1D","OutImage_Match1d")
+
+		param["FilesJres"]= config.get("OverlayJres","Jres_File_List")
+
 
 	except:
 		print("\nERROR: Encountered problems with the config file.")
