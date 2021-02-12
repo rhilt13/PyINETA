@@ -464,7 +464,7 @@ def plotIndividualMatch(pyinetaObj,db_file,netNum,id,Xlim,Ylim):
 	else:
 		netList=[netNum]
 	netFirst=netList.pop()
-	netfig="temp_"+netNum+"_"+id+".eps"
+	netfig=netNum+"_"+id+".eps"
 	# Plot the first network name match
 	for nets in pyinetaObj.NetMatch:
 		if netFirst in nets:
