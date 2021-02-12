@@ -165,7 +165,7 @@ def main(args):
 		summary_file=param['Summary_file']
 		spec.summarize(args.outdir,summary_file)
 	
-	## Overlay 1D 13C specctra on the INADEQUATE spectra
+	## Step 5: Overlay 1D 13C specctra on the INADEQUATE spectra
 	
 	if args.steps.lower() in {'overlay1d'}:
 		
@@ -180,8 +180,14 @@ def main(args):
 		out_1dallImg=param['OutImage_Match1d']
 		out_img51=args.outdir+"/"+out_1dallImg
 
+		if param["Shift_1D"].lower() == "yes":
+			padUnits=[param["Shift_1D_val"],param["Full_1D"],param["Direction_1D"]]
+		else:
+			padUnits=None
+
+		print("Step5==> Overlaying INETA results with provided 1D spectra...")
 		# (fig,curraxs)=plotting.plotNetwork(spec,Xrng,Yrng,PPcs,PPdq,out_file3)
-		overlays.overlay1D(spec,files1D,PPcs,peakWidth1D,intThres,out_file51,out_img51,net=args.net)
+		overlays.overlay1D(spec,files1D,PPcs,peakWidth1D,intThres,out_file51,out_img51,net=args.net,shift=padUnits)
 
 	## Overlay 1D 13C specctra on the INADEQUATE spectra
 	
