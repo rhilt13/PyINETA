@@ -33,6 +33,19 @@ def read1D (ftfile1D):
     Xs=CS.ppm_scale()
     return(ft_data,Xs)
 
+def shift1D (In,pX,fullX,direction):
+    # print(In)
+    if direction.lower() == "pos":      # For increasing ppm axes (eg: peak at 35 ppm is now at 40 ppm)
+        padX=np.zeros(pX)   # fullY= 8192 for INADEQUATE
+        In=np.concatenate((In,padX))
+        In=In[pX:]
+    elif direction.lower() == "neg":        # For decreasing ppm axes (eg: peak at 40 ppm is now at 35 ppm)
+        padX=np.zeros(pX)   # fullY= 8192 for INADEQUATE
+        In=np.concatenate((padX,In))
+        In=In[:-pX]
+    # print(In)
+    return(In)
+
 def readJres (ftfileJres):
     ft_dic,ft_data = ng.pipe.read(ftfileJres)
     print("****")
@@ -62,7 +75,7 @@ def writeOverlays (filelist,aucfile,intThres,outfilename):
         outline+='\n'
         out_file.write(outline)
 
-def overlay1D (pyinetaObj,files1D,ptsTol,aucTol,intThres,outfilename,outimgname,net):
+def overlay1D (pyinetaObj,files1D,ptsTol,aucTol,intThres,outfilename,outimgname,net,shift=None):
     filelist=files1D.split(',')
     nrows = len(filelist)
     allAUC=dict()
@@ -75,6 +88,18 @@ def overlay1D (pyinetaObj,files1D,ptsTol,aucTol,intThres,outfilename,outimgname,
         # Reading 1D file
         (In,Xs)=read1D(filename)
         # Matching networks to 1D peaks
+        if shift is not None:
+            if type(shift) is list and len(shift)==3:
+                if (shift[2].lower() == 'pos'):
+                    directionShift="higher"
+                else:
+                    directionShift="lower"
+                ppmUnits=(200/shift[1])*shift[0]
+                print("\nStep5.1==>Shifting 1D spectra to %s ppm level by %.2f units (%.2f ppm on 13C axis)" % (directionShift,shift[0],ppmUnits))
+                In=shift1D(In,*shift)
+            else:
+                exit("ERROR: Argument shift needs to be a list with 3 items:padding units, total size of X axis and direction (either pos or neg). Eg: [20,4096,'pos']")
+
         aucregion=dict()
         for Net in pyinetaObj.NetMatch:
             if Net[0] not in allAUC:
@@ -97,7 +122,12 @@ def overlay1D (pyinetaObj,files1D,ptsTol,aucTol,intThres,outfilename,outimgname,
                 allAUC[Net[0]][j].append([Net[3][i],Pt,arr2[i],auc])
                 aucregion[Net[0]].append((valMin,valMax))
         # Plotting overall 1D plots
-        plotting.plot1D(In,Xs,aucregion,ax=axs[j],title=fn,net=net)
+        if isinstance(axs,np.ndarray):
+            currax=axs[j]
+        else:
+            currax=axs
+        # print(In.shape)
+        plotting.plot1D(In,Xs,aucregion,ax=currax,title=fn,net=net)
         auc_lower = {k.lower():v for k,v in aucregion.items()}
         # Plotting individual matched regions for specified networks
         print("Plotting individual network matches for %s ..." % (fn))
@@ -112,13 +142,17 @@ def overlay1D (pyinetaObj,files1D,ptsTol,aucTol,intThres,outfilename,outimgname,
                 ct[n]=0
             auc_lower[n].sort(key = operator.itemgetter(0), reverse = True)
             for k,r in enumerate(auc_lower[n]):
-                curr_ax=ax_net[n][j][k]
+                if isinstance(ax_net[n][j],np.ndarray):
+                    curr_ax=ax_net[n][j][k]
+                else:
+                    curr_ax=ax_net[n][j]
                 curr_ax.plot(Xs,In,'k-')
                 low_lim=r[0]-1
                 up_lim=r[1]+1
                 curr_ax.axvspan(r[0], r[1], facecolor='g', alpha=0.1)
                 curr_ax.set_xlim(low_lim,up_lim)
-                title=fn+" "+str(r[0])+"-"+str(r[1])
+                midpt=(r[0]+r[1])/2
+                title=fn+" "+str(r[0])+"-"+str(r[1])+"("+str(midpt)+")"
                 curr_ax.set_title(title)
                 curr_ax.invert_xaxis()
                 ct[n]+=1
@@ -130,7 +164,11 @@ def overlay1D (pyinetaObj,files1D,ptsTol,aucTol,intThres,outfilename,outimgname,
     # Write 1D matches for all networks to a file
     writeOverlays(filelist,allAUC,intThres,outfilename)
     # Save final figure
-    axs[0].invert_xaxis()
+    if isinstance(ax_net[n][j],np.ndarray):
+        curr_ax=axs[0]
+    else:
+        curr_ax=axs
+    curr_ax.invert_xaxis()
     lines, labels = fig.axes[-1].get_legend_handles_labels()
     fig.legend(lines, labels, loc = 'upper right')
     fig.tight_layout()
