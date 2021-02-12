@@ -92,7 +92,7 @@ class Pyineta:
 
 		if shift is not None:
 			if type(shift) is list and len(shift)==4:
-				if (shift[3] == 'pos'):
+				if (shift[3].lower() == 'pos'):
 					directionShift="higher"
 				else:
 					directionShift="lower"
@@ -345,6 +345,11 @@ def readConfig (configFile):
 		param["Intensity_threshold"]= config.getfloat("Overlay1D","Intensity_threshold")
 		param["Match1d_output_file"]= config.get("Overlay1D","Match1d_output_file")
 		param["OutImage_Match1d"]= config.get("Overlay1D","OutImage_Match1d")
+
+		param["Shift_1D"]= config.get("Overlay1D","Shift_1D")
+		param["Direction_1D"]= config.get("Overlay1D","Direction_1D")
+		param["Shift_1D_val"]= config.getint("Overlay1D","Shift_1D_val")
+		param["Full_1D"]= config.getint("Overlay1D","Full_1D")
 
 		param["FilesJres"]= config.get("OverlayJres","Jres_File_List")
 
