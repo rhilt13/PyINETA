@@ -2,7 +2,7 @@
 
 This includes all the plotting functions used by INETA.
 Includes the following funcitons:
-	* plot1D - 
+	* plot1D - Plot 1D spectra
 	* plotSingle - Generate a single plot for a given spectrum.
 	* plotFigSep - Generate image with spectra for each saved iteration in a separate panel.
 	* plotClusteredPoints - Plot the clustered points and theirr centers in the spectra.

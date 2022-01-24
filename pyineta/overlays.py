@@ -30,6 +30,9 @@ def readFt (ftfile):
 def read1D (ftfile1D):
     ft_dic,ft_data = ng.pipe.read(ftfile1D)
     CS = ng.pipe.make_uc(ft_dic, ft_data, 0)
+    if ft_data.dtype=='complex64':
+        data_e1 = np.stack([np.real(ft_data), np.imag(ft_data)], axis=-1)
+        ft_data=data_e1[:,0]
     Xs=CS.ppm_scale()
     return(ft_data,Xs)
 
@@ -51,6 +54,7 @@ def readJres (ftfileJres):
     print("****")
     print(ft_dic)
     print("****")
+    print(ft_data.shape)
     In=ft_data.transpose()
     
     DQ = ng.pipe.make_uc(ft_dic, ft_data, 0)
@@ -142,10 +146,15 @@ def overlay1D (pyinetaObj,files1D,ptsTol,aucTol,intThres,outfilename,outimgname,
                 ct[n]=0
             auc_lower[n].sort(key = operator.itemgetter(0), reverse = True)
             for k,r in enumerate(auc_lower[n]):
-                if isinstance(ax_net[n][j],np.ndarray):
-                    curr_ax=ax_net[n][j][k]
+                # print(n,nrows,ncols)
+                # print(ax_net[n].ndim)
+                if (ncols>1):
+                    if isinstance(ax_net[n][j],np.ndarray):
+                        curr_ax=ax_net[n][j][k]
+                    else:
+                        curr_ax=ax_net[n][j]
                 else:
-                    curr_ax=ax_net[n][j]
+                    curr_ax=ax_net[n]
                 curr_ax.plot(Xs,In,'k-')
                 low_lim=r[0]-1
                 up_lim=r[1]+1
