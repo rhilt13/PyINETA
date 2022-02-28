@@ -8,6 +8,7 @@ Includes the following functions:
 	* pick - Peak picking function.
 """
 
+import math
 import numpy as np
 import nmrglue as ng
 
@@ -50,8 +51,8 @@ def shifting (In,pX,fullX,fullY,direction):
 	Returns:
 		ndarray : Intensity array after shifting of peaks.
 	"""
-
-	pY=pX*2
+	ratio=fullY/fullX
+	pY=math.ceil(pX*ratio)
 	if direction.lower() == "pos":      # For increasing ppm axes (eg: peak at 35 ppm is now at 40 ppm)
 		padX=np.zeros((pX,fullY))   # fullY= 8192 for INADEQUATE
 		padY=np.zeros((fullX,pY))   # fullX=4096 for INADEQUATE
