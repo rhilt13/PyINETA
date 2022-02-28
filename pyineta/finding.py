@@ -50,7 +50,7 @@ def mergeLevels (Clist,levdist):
 	"""
 
 	mergedClistAll=np.vstack(list(Clist.values()))
-	mergedClist=Clist[0]
+	mergedClist=Clist[list(Clist.keys())[0]]
 	for k, C in list(Clist.items()):
 		for P in C:
 			res=findClosestPoints(mergedClist,P)
