@@ -112,9 +112,12 @@ class Pyineta:
 			PPcs (float): Points found within this threshold along the 13C axis are grouped into a single cluster.
 			PPdq (float): A distance threshold for splitting points into a different cluster along the DQ axis.
 		"""
-
+		# print(self.Pts)
 		self.clusteredPts={}
 		for k, P in list(self.Pts.items()):
+			if len(P)==0: 
+				continue
+			# print(k,len(P))
 			sortedP=clustering.gather(P,float(PPcs),0)
 			ysortedP=clustering.splitY(sortedP,float(PPdq),1)
 			self.clusteredPts[k]=clustering.centerMass(ysortedP,"median")
