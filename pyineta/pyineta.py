@@ -345,7 +345,7 @@ def readConfig (configFile):
 
 		param["Files1D"]= config.get("Overlay1D","1D_File_List")
 		param["PeakWidth1D"]= config.getfloat("Overlay1D","Peak_Width_1D")
-		param["Intensity_threshold"]= config.getfloat("Overlay1D","Intensity_threshold")
+		param["Intensity_threshold1D"]= config.getfloat("Overlay1D","Intensity_threshold_1D")
 		param["Match1d_output_file"]= config.get("Overlay1D","Match1d_output_file")
 		param["OutImage_Match1d"]= config.get("Overlay1D","OutImage_Match1d")
 
@@ -355,8 +355,11 @@ def readConfig (configFile):
 		param["Full_1D"]= config.getint("Overlay1D","Full_1D")
 
 		param["FilesJres"]= config.get("OverlayJres","Jres_File_List")
-
-
+		param['JresProjectionMethod']= config.get("OverlayJres","Jres_Projection_Method")
+		param['PeakWidthJres']= config.getfloat("OverlayJres","Peak_Width_Jres")
+		param["Intensity_thresholdJres"]= config.getfloat("OverlayJres","Intensity_threshold_Jres")
+		param["MatchJres_output_file"]= config.get("OverlayJres","MatchJres_output_file")
+		param["OutImage_MatchJres"]= config.get("OverlayJres","OutImage_MatchJres")
 	except:
 		print("\nERROR: Encountered problems with the config file.")
 		print("\tDo you have an older version?")

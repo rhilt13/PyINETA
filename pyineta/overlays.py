@@ -49,12 +49,8 @@ def shift1D (In,pX,fullX,direction):
     # print(In)
     return(In)
 
-def readJres (ftfileJres):
+def readJres (ftfileJres,method='max'):
     ft_dic,ft_data = ng.pipe.read(ftfileJres)
-    print("****")
-    print(ft_dic)
-    print("****")
-    print(ft_data.shape)
     In=ft_data.transpose()
     
     DQ = ng.pipe.make_uc(ft_dic, ft_data, 0)
@@ -62,7 +58,17 @@ def readJres (ftfileJres):
 
     CS = ng.pipe.make_uc(ft_dic, ft_data, 1)
     Xs=CS.ppm_scale()
-    return(In,Xs,Ys)
+    # X is 13 C spectrum for Jres
+    # Y is 1 H spectrum for Jres
+    if method.lower()=='sum':
+        InProj=np.sum(In,axis=1)
+    elif method.lower()=='avg':
+        InProj=np.mean(In,axis=1)
+    elif method.lower()=='max':
+        InProj=np.amax(In,axis=1)
+    else:
+        msg="ERROR:",method,"not a valid Jres projection method. Please use either max, sum or avg."
+    return(InProj,Xs)
 
 def writeOverlays (filelist,aucfile,intThres,outfilename):    
     out_file = open(outfilename, 'w')
@@ -79,8 +85,8 @@ def writeOverlays (filelist,aucfile,intThres,outfilename):
         outline+='\n'
         out_file.write(outline)
 
-def overlay1D (pyinetaObj,files1D,ptsTol,aucTol,intThres,outfilename,outimgname,net,shift=None):
-    filelist=files1D.split(',')
+def overlaySpec (pyinetaObj,spec_files,ptsTol,aucTol,intThres,outfilename,outimgname,net,shift=None,method='1d',use=None):
+    filelist=spec_files.split(',')
     nrows = len(filelist)
     allAUC=dict()
     fig_net=dict()
@@ -90,19 +96,25 @@ def overlay1D (pyinetaObj,files1D,ptsTol,aucTol,intThres,outfilename,outimgname,
     for j,filename in enumerate(filelist):
         fn=filename.split("/")[-1].rsplit(".",1)[0]
         # Reading 1D file
-        (In,Xs)=read1D(filename)
-        # Matching networks to 1D peaks
-        if shift is not None:
-            if type(shift) is list and len(shift)==3:
-                if (shift[2].lower() == 'pos'):
-                    directionShift="higher"
+        if method.lower()=='1d':
+            (In,Xs)=read1D(filename)
+            # Matching networks to 1D peaks
+            if shift is not None:
+                if type(shift) is list and len(shift)==3:
+                    if (shift[2].lower() == 'pos'):
+                        directionShift="higher"
+                    else:
+                        directionShift="lower"
+                    ppmUnits=(200/shift[1])*shift[0]
+                    print("\nStep5.1==>Shifting 1D spectra to %s ppm level by %.2f units (%.2f ppm on 13C axis)" % (directionShift,shift[0],ppmUnits))
+                    In=shift1D(In,*shift)
                 else:
-                    directionShift="lower"
-                ppmUnits=(200/shift[1])*shift[0]
-                print("\nStep5.1==>Shifting 1D spectra to %s ppm level by %.2f units (%.2f ppm on 13C axis)" % (directionShift,shift[0],ppmUnits))
-                In=shift1D(In,*shift)
-            else:
-                exit("ERROR: Argument shift needs to be a list with 3 items:padding units, total size of X axis and direction (either pos or neg). Eg: [20,4096,'pos']")
+                    exit("ERROR: Argument shift needs to be a list with 3 items:padding units, total size of X axis and direction (either pos or neg). Eg: [20,4096,'pos']")
+        elif method.lower()=='jres':
+            (In,Xs)=readJres(filename,use)
+        else:
+            msg="ERROR: ",method,"not a valid method. Please use 1D or Jres."
+            exit(msg)
 
         aucregion=dict()
         for Net in pyinetaObj.NetMatch:
@@ -183,17 +195,20 @@ def overlay1D (pyinetaObj,files1D,ptsTol,aucTol,intThres,outfilename,outimgname,
     fig.tight_layout()
     fig.savefig(outimgname)
 
-def overlayJres (pyinetaObj,filesJres):
-    filelist=filesJres.split(',')
-    allAUC=dict()
-    fig, axs = plt.subplots(len(filelist), 1, figsize=(30, 10), sharex=True)
-    for j,filename in enumerate(filelist):
-        # Reading 1D file
-        (In,Xs,Ys)=readJres(filename)
-        print(In,Xs,Ys)
-        print(In.shape)
-        print(Xs.shape)
-        print(Ys.shape)
-        print("---------")
-        print(pyinetaObj.In,pyinetaObj.Cppm,pyinetaObj.DQppm)
+# def overlayJres (pyinetaObj,filesJres,method='max'):
+#     filelist=filesJres.split(',')
+#     allAUC=dict()
+#     fig, axs = plt.subplots(len(filelist), 1, figsize=(30, 10), sharex=True)
+#     for j,filename in enumerate(filelist):
+#         # Reading 1D file
+#         (In,Xs,Ys)=readJres(filename)
+#         print(pyinetaObj.Cppm)#,pyinetaObj.DQppm)
+#         if method.lower()=='sum':
+#             InProj=np.sum(In,axis=1)
+#         elif method.lower()=='avg':
+#             InProj=np.mean(In,axis=1)
+#         elif method.lower()=='max':
+#             InProj=np.amax(In,axis=1)
+#         # InProj,Xs
+
         
