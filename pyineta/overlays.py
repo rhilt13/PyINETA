@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.gridspec import GridSpec
 import re
 import operator
 import nmrglue as ng
@@ -85,7 +86,7 @@ def writeOverlays (filelist,aucfile,intThres,outfilename):
         outline+='\n'
         out_file.write(outline)
 
-def overlaySpec (pyinetaObj,spec_files,ptsTol,aucTol,intThres,outfilename,outimgname,net,shift=None,method='1d',use=None):
+def overlaySpec (pyinetaObj,spec_files,ptsTol,aucTol,intThres,outfilename,outimgname,net,shift=None,method='1d',use=None,savefmt="svg"):
     filelist=spec_files.split(',')
     nrows = len(filelist)
     allAUC=dict()
@@ -118,22 +119,31 @@ def overlaySpec (pyinetaObj,spec_files,ptsTol,aucTol,intThres,outfilename,outimg
 
         aucregion=dict()
         for Net in pyinetaObj.NetMatch:
+            # if not Net[0] == "Network3":
+            #     continue
+            # print(Net)
             if Net[0] not in allAUC:
                 allAUC[Net[0]]=dict()
             allAUC[Net[0]][j]=list()
             Matched=np.zeros(1)
             arr=np.around(np.asarray(Net[1]),decimals=2)
             arr2=np.around(np.asarray(Net[2]),decimals=2)
+            print(arr,arr2)
             aucregion[Net[0]]=list()
             for i,Pt in enumerate(arr):
+                print(Matched,Pt)
                 if np.isclose(Matched,Pt,atol=ptsTol).any():
                     continue
                 Matched=np.append(Matched,Pt)
                 valMin=Pt-aucTol/2
                 valMax=Pt+aucTol/2
+                print(valMin,valMax, aucTol)
                 idxMin = (np.abs(Xs - valMin)).argmin()
                 idxMax = (np.abs(Xs - valMax)).argmin()
-                indices=[idxMin,idxMax]
+                indices=list(range(idxMin,idxMax,-1))
+                print(indices)
+                print(Xs[indices]) # <- this is collected correctly
+                print(In[indices])
                 auc=In[indices].sum()
                 allAUC[Net[0]][j].append([Net[3][i],Pt,arr2[i],auc])
                 aucregion[Net[0]].append((valMin,valMax))
@@ -142,31 +152,53 @@ def overlaySpec (pyinetaObj,spec_files,ptsTol,aucTol,intThres,outfilename,outimg
             currax=axs[j]
         else:
             currax=axs
+        print("HERE now:", type(axs))
+        print(aucregion)
         # print(In.shape)
         plotting.plot1D(In,Xs,aucregion,ax=currax,title=fn,net=net)
         auc_lower = {k.lower():v for k,v in aucregion.items()}
+        print(auc_lower)
         # Plotting individual matched regions for specified networks
         print("Plotting individual network matches for %s ..." % (fn))
         if net is None:
             Netlist=[item[0].lower() for item in pyinetaObj.NetMatch]
         else:
             Netlist=net.lower().split(",")
+        print(net,Netlist)
         for n in Netlist:
+            # if not n == "network3":
+            #     continue
+            # n="network3"
             ncols=len(auc_lower[n])
             if n not in fig_net:
-                fig_net[n],ax_net[n] = plt.subplots(nrows, ncols, figsize=(ncols*5, nrows*5))
+                print("NROWS==>",nrows)
+                fig_net[n]=plt.figure(figsize=(ncols*5, 10))
+                gs=GridSpec(2,ncols)
+
+                # fig_net[n],ax_net[n] = plt.subplots(nrows, ncols, figsize=(ncols*5, nrows*5))
                 ct[n]=0
+            
+            curr_ax = plt.subplot(gs[1,:])
+            fig_net[n].add_subplot(curr_ax)
+            ## PLOT THE ENTIRE THING HERE....
+            sel_region={n:auc_lower[n]}
+            # print(auc_lower[n])
+            plotting.plot1D(In,Xs,sel_region,ax=curr_ax,title=fn,net=net)
+
+            curr_ax.invert_xaxis()
+            curr_ax.tick_params(axis='both', which='major', labelsize=12)
+            
+            # lines, labels = fig_net[n].axes[-1].get_legend_handles_labels()
+            # fig_net[n].legend(lines, labels, loc = 'upper right')
+            # fig_net[n].tight_layout()
+            # fig.savefig(outimgname)
+
             auc_lower[n].sort(key = operator.itemgetter(0), reverse = True)
+            print(auc_lower)
+            # ax_net[n][]
+
             for k,r in enumerate(auc_lower[n]):
-                # print(n,nrows,ncols)
-                # print(ax_net[n].ndim)
-                if (ncols>1):
-                    if isinstance(ax_net[n][j],np.ndarray):
-                        curr_ax=ax_net[n][j][k]
-                    else:
-                        curr_ax=ax_net[n][j]
-                else:
-                    curr_ax=ax_net[n]
+                curr_ax = plt.subplot(gs[0,k])
                 curr_ax.plot(Xs,In,'k-')
                 low_lim=r[0]-1
                 up_lim=r[1]+1
@@ -179,13 +211,13 @@ def overlaySpec (pyinetaObj,spec_files,ptsTol,aucTol,intThres,outfilename,outimg
                 ct[n]+=1
     # Save individual peak stacks for specified networks (-n flag)    
     for n in fig_net:
-        outcurrimg=outimgname.rsplit(".",1)[0]+"_"+n+".svg"
+        outcurrimg=outimgname.rsplit(".",1)[0]+"_"+n+"."+savefmt
         fig_net[n].tight_layout()
-        fig_net[n].savefig(outcurrimg)
+        fig_net[n].savefig(outcurrimg, dpi=300)
     # Write 1D matches for all networks to a file
     writeOverlays(filelist,allAUC,intThres,outfilename)
     # Save final figure
-    if isinstance(ax_net[n][j],np.ndarray):
+    if isinstance(axs,np.ndarray):
         curr_ax=axs[0]
     else:
         curr_ax=axs

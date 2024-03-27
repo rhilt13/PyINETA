@@ -179,6 +179,7 @@ def main(args):
 		out_file51=args.outdir+"/"+Match1D_outfile
 		out_1dallImg=param['OutImage_Match1d']
 		out_img51=args.outdir+"/"+out_1dallImg
+		savefmt=param['1DImgFmt']
 
 		if param["Shift_1D"].lower() == "yes":
 			padUnits=[param["Shift_1D_val"],param["Full_1D"],param["Direction_1D"]]
@@ -187,7 +188,7 @@ def main(args):
 
 		print("Step5==> Overlaying INETA results with provided 1D spectra...")
 		# (fig,curraxs)=plotting.plotNetwork(spec,Xrng,Yrng,PPcs,PPdq,out_file3)
-		overlays.overlaySpec(spec,files1D,PPcs,peakWidth1D,intThres1D,out_file51,out_img51,net=args.net,shift=padUnits,method='1D')
+		overlays.overlaySpec(spec,files1D,PPcs,peakWidth1D,intThres1D,out_file51,out_img51,net=args.net,shift=padUnits,method='1D',savefmt=savefmt)
 
 	## Overlay 1D 13C specctra on the INADEQUATE spectra
 	
@@ -204,11 +205,12 @@ def main(args):
 		out_file52=args.outdir+"/"+MatchJres_outfile
 		out_JresallImg=param['OutImage_MatchJres']
 		out_img52=args.outdir+"/"+out_JresallImg
+		savefmt=param['JresImgFmt']
 
 		# (fig,curraxs)=plotting.plotNetwork(spec,Xrng,Yrng,PPcs,PPdq,out_file3)
 		# overlays.overlay1D(spec,files1D,PPcs,peakWidth1D,intThres,out_file51,out_img51,net=args.net)
 		# overlays.overlayJres(spec,filesJres,method=JresMethod)
-		overlays.overlaySpec(spec,filesJres,PPcs,peakWidthJres,intThresJres,out_file52,out_img52,net=args.net,shift=None,method='jres',use=JresMethod)
+		overlays.overlaySpec(spec,filesJres,PPcs,peakWidthJres,intThresJres,out_file52,out_img52,net=args.net,shift=None,method='jres',use=JresMethod,savefmt=savefmt)
 
 	## Plotting for all steps
 

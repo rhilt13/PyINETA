@@ -353,13 +353,15 @@ def readConfig (configFile):
 		param["Direction_1D"]= config.get("Overlay1D","Direction_1D")
 		param["Shift_1D_val"]= config.getint("Overlay1D","Shift_1D_val")
 		param["Full_1D"]= config.getint("Overlay1D","Full_1D")
-
+		param['1DImgFmt']= config.get("Overlay1D","OutImageFormat1D")
+		
 		param["FilesJres"]= config.get("OverlayJres","Jres_File_List")
 		param['JresProjectionMethod']= config.get("OverlayJres","Jres_Projection_Method")
 		param['PeakWidthJres']= config.getfloat("OverlayJres","Peak_Width_Jres")
 		param["Intensity_thresholdJres"]= config.getfloat("OverlayJres","Intensity_threshold_Jres")
 		param["MatchJres_output_file"]= config.get("OverlayJres","MatchJres_output_file")
 		param["OutImage_MatchJres"]= config.get("OverlayJres","OutImage_MatchJres")
+		param['JresImgFmt']= config.get("OverlayJres","OutImageFormatJres")
 	except:
 		print("\nERROR: Encountered problems with the config file.")
 		print("\tDo you have an older version?")
